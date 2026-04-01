@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Isolated WAM Plugin Test</title>
+  <script type="module" src="./components/wamplugin.js"></script>
+  <link rel="stylesheet" href="./css/theme-futuristic.css">
+  <style>
+    html, body {
+      width: 100%; height: 100%;
+      margin: 0;
+      background: linear-gradient(180deg, #030308, #060a14);
+      color: var(--fx-text);
+      font-family: var(--fx-font-ui), system-ui, sans-serif;
+    }
+    body {
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    wam-plugin {
+      display: block;
+      width: min(700px, 100%);
+      border: 1px solid rgba(0, 240, 255, 0.25);
+      border-radius: 12px;
+      padding: 12px;
+      background: rgba(8, 16, 36, 0.75);
+      margin-top: 16px;
+      box-shadow: 0 0 24px rgba(0, 240, 255, 0.08);
+    }
+    #log { font-size: 12px; opacity: 0.8; margin-top: 10px; }
+    button { padding: 8px 14px; border-radius: 8px; background: rgba(255,255,255,0.08); color: #eaeaea; border: 1px solid rgba(255,255,255,0.15); cursor: pointer; }
+    button:hover { background: rgba(255,255,255,0.15); }
+    .help { font-size: 12px; opacity: 0.7; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Standalone WAM Plugin Demo</h1>
+  <p>Click "Start Audio" to initialize an oscillator, then load a WAM plugin URL.</p>
+  <button id="startBtn">Start Audio</button>
+  <div class="help">
+    Try a WAM plugin URL from the <a href="https://www.webaudiomodules.com/docs/community" target="_blank" style="color:#9ad5ff">WAM Gallery</a>
+  </div>
+  <wam-plugin id="wam" name="WAM Effect"></wam-plugin>
+  <div id="log"></div>
+
+  <script>
+    const wam = document.getElementById('wam');
+    const log = document.getElementById('log');
+
+    wam.addEventListener('wam-loaded', (e) => {
+      log.textContent = `WAM loaded: ${e.detail.name || e.detail.url}`;
+    });
+    wam.addEventListener('wam-error', (e) => {
+      log.textContent = `WAM error: ${e.detail.error}`;
+    });
+    wam.addEventListener('wam-bypass', (e) => {
+      log.textContent = `WAM bypass: ${e.detail.bypassed}`;
+    });
+
+    document.getElementById('startBtn').addEventListener('click', async () => {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      osc.type = 'sawtooth';
+      osc.frequency.value = 220;
+
+      const gain = ctx.createGain();
+      gain.gain.value = 0.05;
+
+      wam.setAudioContext(ctx);
+      osc.connect(gain);
+      wam.setInput(gain);
+      wam.getOutput().connect(ctx.destination);
+
+      osc.start();
+      log.textContent = 'Audio started — oscillator 220 Hz sawtooth';
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,61 @@
+@import url('./theme-futuristic.css');
+
+:host {
+  display: block;
+  font-family: var(--fx-font-ui);
+  font-size: 12px;
+  color: var(--fx-text);
+}
+.eq { display: flex; flex-direction: column; gap: 4px; }
+.top { display: flex; align-items: center; gap: 6px; justify-content: space-between; }
+.controls { display: flex; gap: 6px; align-items: center; }
+.sliders { display: grid; grid-template-columns: repeat(10, minmax(24px, 1fr)); gap: 6px; align-items: end; }
+.band { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.band label {
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fx-text-dim);
+}
+webaudio-slider { display: inline-block; }
+
+select, button {
+  font-family: var(--fx-font-ui);
+  padding: 4px 8px;
+  border-radius: var(--fx-radius-sm);
+  background: var(--fx-surface-2);
+  color: var(--fx-text);
+  border: 1px solid var(--fx-border);
+  cursor: pointer;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+button:hover {
+  border-color: var(--fx-border-strong);
+  box-shadow: var(--fx-glow-cyan);
+}
+button.active {
+  background: rgba(0, 240, 255, 0.2);
+  border-color: var(--fx-cyan);
+  color: var(--fx-cyan);
+  box-shadow: var(--fx-glow-cyan);
+}
+
+.foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 2px;
+  font-size: 10px;
+  color: var(--fx-text-dim);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+:host([compact]) .eq { gap: 2px; }
+:host([compact]) .top { gap: 4px; }
+:host([compact]) .controls { gap: 4px; }
+:host([compact]) .sliders { gap: 4px; }
+:host([compact]) .band { gap: 2px; }
+:host([compact]) .foot { font-size: 9px; margin-top: 0; }

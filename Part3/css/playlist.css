@@ -1,0 +1,93 @@
+@import url('./theme-futuristic.css');
+
+:host {
+  display: block;
+  height: 100%;
+  min-height: 0;
+  font-family: var(--fx-font-ui);
+  color: var(--fx-text);
+  font-size: 12px;
+}
+
+ul {
+  list-style: none;
+  padding: 0 16px 0 0;
+  margin: 0;
+  height: 100%;
+  max-height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable both-edges;
+  box-sizing: border-box;
+}
+
+ul::-webkit-scrollbar-thumb {
+  background: var(--fx-border-strong);
+  border-radius: 4px;
+}
+ul::-webkit-scrollbar {
+  width: 6px;
+}
+
+li {
+  padding: 8px 10px;
+  cursor: pointer;
+  border-radius: var(--fx-radius-sm);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  user-select: none;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+  width: 100%;
+  min-width: 0;
+  gap: 8px;
+  border: 1px solid transparent;
+}
+
+li:hover {
+  background: var(--fx-cyan-dim);
+  border-color: var(--fx-border);
+}
+
+li.current {
+  background: rgba(0, 240, 255, 0.12);
+  border-color: var(--fx-cyan);
+  color: var(--fx-cyan);
+  box-shadow: var(--fx-glow-cyan);
+  font-weight: 600;
+}
+
+li.drag-over {
+  background: rgba(0, 240, 255, 0.2);
+  border-top: 2px solid var(--fx-magenta);
+  box-shadow: var(--fx-glow-magenta);
+}
+
+.track-info { flex: 1; min-width: 0; }
+.track-title {
+  font-weight: 600;
+  display: block;
+  white-space: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 2px;
+  letter-spacing: 0.02em;
+}
+.track-dur { font-size: 10px; color: var(--fx-text-dim); font-variant-numeric: tabular-nums; }
+.track-actions { display: flex; gap: 4px; flex: 0 0 auto; }
+
+.btn-del {
+  background: rgba(255, 43, 214, 0.15);
+  border: 1px solid rgba(255, 43, 214, 0.4);
+  color: var(--fx-magenta);
+  padding: 2px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 600;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+.btn-del:hover {
+  background: rgba(255, 43, 214, 0.3);
+  box-shadow: var(--fx-glow-magenta);
+}

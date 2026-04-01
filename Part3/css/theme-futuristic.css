@@ -1,0 +1,28 @@
+/**
+ * Thème futuriste — variables partagées (réimportées dans chaque :host Shadow DOM).
+ * Palette : néon cyan / magenta sur fond spatial profond.
+ */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700&family=Rajdhani:wght@400;500;600;700&display=swap');
+
+/* Réutilisable dans :host { } des composants */
+:root,
+:host {
+  --fx-font-display: 'Orbitron', system-ui, sans-serif;
+  --fx-font-ui: 'Rajdhani', system-ui, sans-serif;
+  --fx-bg-void: #030308;
+  --fx-bg-deep: #060a14;
+  --fx-surface: rgba(8, 16, 36, 0.75);
+  --fx-surface-2: rgba(12, 24, 48, 0.55);
+  --fx-cyan: #00f0ff;
+  --fx-cyan-dim: rgba(0, 240, 255, 0.15);
+  --fx-magenta: #ff2bd6;
+  --fx-violet: #7c3aed;
+  --fx-text: #e8f4ff;
+  --fx-text-dim: #7ea8c9;
+  --fx-border: rgba(0, 240, 255, 0.22);
+  --fx-border-strong: rgba(0, 240, 255, 0.45);
+  --fx-glow-cyan: 0 0 20px rgba(0, 240, 255, 0.25), 0 0 40px rgba(0, 200, 255, 0.08);
+  --fx-glow-magenta: 0 0 16px rgba(255, 43, 214, 0.2);
+  --fx-radius: 14px;
+  --fx-radius-sm: 8px;
+}
