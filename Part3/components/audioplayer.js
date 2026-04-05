@@ -1,4 +1,4 @@
-import './libs/webaudiocontrols.js';
+import './playercontrols.js';
 import './myequalizer.js';
 import './myvisualizer.js';
 import './playlist.js';
@@ -56,7 +56,7 @@ class MyAudioPlayer extends HTMLElement {
         </div>
 
         <div class="grid">
-          <div class="card card-playlist" data-card="playlist" style="grid-area:playlist">
+          <div class="card card-playlist" data-card="playlist" style="grid-area:slot1">
             <div class="card-header">
               <div class="title">Playlist</div>
               <button class="detach-btn" title="Detach panel" aria-label="Detach panel">⧉</button>
@@ -70,7 +70,7 @@ class MyAudioPlayer extends HTMLElement {
             <my-playlist id="playlist"></my-playlist>
           </div>
 
-          <div class="card card-equalizer" data-card="equalizer" style="grid-area:equalizer">
+          <div class="card card-equalizer" data-card="equalizer" style="grid-area:slot2">
             <div class="card-header">
               <div class="title">Equalizer</div>
               <button class="detach-btn" title="Detach panel" aria-label="Detach panel">⧉</button>
@@ -78,36 +78,15 @@ class MyAudioPlayer extends HTMLElement {
             <my-equalizer id="eq" ${isFixedLayout ? 'compact' : ''}></my-equalizer>
           </div>
 
-          <div class="card card-controls" data-card="controls" style="grid-area:controls">
+          <div class="card card-controls" data-card="controls" style="grid-area:slot4">
             <div class="card-header">
               <div class="title">Controls</div>
               <button class="detach-btn" title="Detach panel" aria-label="Detach panel">⧉</button>
             </div>
-            <div class="transport">
-              <button id="playbtn">▶ Play</button>
-              <button id="pausebtn">⏸ Pause</button>
-            </div>
-            <div class="transport" style="margin-bottom:14px;">
-              <button id="prevbtn" title="Previous track">⏮ Prev</button>
-              <button id="nextbtn" title="Next track">Next ⏭</button>
-              <button id="shufflebtn" title="Toggle shuffle">🔀 Shuffle</button>
-              <button id="loopbtn" title="Toggle loop">🔁 Loop</button>
-            </div>
-            <div class="row">
-              <label for="volumeslider">Volume</label>
-              <input type="range" id="volumeslider" min="0" max="1" step="0.01" value="1">
-            </div>
-            <div class="knobrow">
-              <div class="small">Knob volume</div>
-              <webaudio-knob id="Knobvolume" min="0" max="1" step="0.01" value="1"></webaudio-knob>
-            </div>
-            <div class="row" style="margin-top:14px;">
-              <label for="balanceslider">Balance</label>
-              <input type="range" id="balanceslider" min="-1" max="1" step="0.01" value="0">
-            </div>
+            <my-player-controls id="playerControls"></my-player-controls>
           </div>
 
-          <div class="card card-wam" data-card="wam" style="grid-area:wam">
+          <div class="card card-wam" data-card="wam" style="grid-area:slot5">
             <div class="card-header">
               <div class="title">WAM Effects</div>
               <button class="detach-btn" title="Detach panel" aria-label="Detach panel">⧉</button>
@@ -115,19 +94,18 @@ class MyAudioPlayer extends HTMLElement {
             <wam-plugin id="wam1" name="WAM Effect" src="https://www.webaudiomodules.com/community/plugins/wimmics/graphicEqualizer/index.js"></wam-plugin>
           </div>
 
-          <div class="card card-visualizer" data-card="visualizer" style="grid-area:visualizer">
+          <div class="card card-visualizer" data-card="visualizer" style="grid-area:slot3">
             <div class="card-header">
               <div class="title">Visualizer</div>
               <button class="detach-btn" title="Detach panel" aria-label="Detach panel">⧉</button>
             </div>
 
             <my-visualizer id="viz" ${isFixedLayout ? 'compact' : ''}></my-visualizer>
-            <div class="meter"><div id="volMeter"></div></div>
           </div>
         </div>
       </div>
     `;
-    this.shadowRoot.innerHTML = style + html;
+    this.shadowRoot.innerHTML = style + '<div class="audio-player-shell">' + html + '</div>';
 
     const attr = this.getAttribute('data-tracks') || this.getAttribute('tracks');
     try {
@@ -150,16 +128,6 @@ class MyAudioPlayer extends HTMLElement {
       }
     }
 
-    const ariaMap = [
-      ['#playbtn','Play'], ['#pausebtn','Pause'], ['#nextbtn','Next track'], ['#prevbtn','Previous track'],
-      ['#shufflebtn','Toggle shuffle'], ['#loopbtn','Toggle loop mode']
-    ];
-    ariaMap.forEach(([sel,label])=>{
-      const el = this.shadowRoot.querySelector(sel);
-      if(el) el.setAttribute('aria-label', label);
-    });
-    const vol = this.shadowRoot.querySelector('#volumeslider'); if(vol) vol.setAttribute('aria-label','Volume');
-    const bal = this.shadowRoot.querySelector('#balanceslider'); if(bal) bal.setAttribute('aria-label','Balance');
     const progressEl = this.shadowRoot.querySelector('#progress'); if(progressEl) {
       progressEl.setAttribute('role','progressbar');
       progressEl.setAttribute('aria-valuemin','0');
@@ -177,7 +145,7 @@ class MyAudioPlayer extends HTMLElement {
     this.defineListeners();
   }
 
-  initAudioGraph(audioElement, ui){
+  initAudioGraph(audioElement, controlsEl){
     if (this.isGraphReady) return;
 
     this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -189,8 +157,8 @@ class MyAudioPlayer extends HTMLElement {
     this.analyserNode.fftSize = 2048;
     this.analyserNode.smoothingTimeConstant = 0.8;
 
-    this.gainNode.gain.value = Number(ui.volumeSlider.value);
-    this.pannerNode.pan.value = Number(ui.balanceSlider.value);
+    this.gainNode.gain.value = controlsEl.getVolumeValue();
+    this.pannerNode.pan.value = controlsEl.getBalanceValue();
 
     this.eq = this.shadowRoot.querySelector('#eq');
     if (this.eq && this.eq.setAudioContext) {
@@ -198,7 +166,6 @@ class MyAudioPlayer extends HTMLElement {
       this.eq.setInput(this.sourceNode);
       const eqOut = this.eq.getOutput();
 
-      // Wire WAM plugin between EQ output and gain
       const wam = this.shadowRoot.querySelector('#wam1');
       if (wam && wam.setAudioContext) {
         wam.setAudioContext(this.audioContext);
@@ -236,11 +203,6 @@ class MyAudioPlayer extends HTMLElement {
     return `${m}:${s}`;
   }
 
-  /**
-   * Prochain index à jouer (ordre playlist ou ordre mélangé). En shuffle + loop all,
-   * à la fin d’un passage mélangé on tire un **nouveau** mélange pour couvrir toutes les pistes
-   * sur le long terme au lieu de repartir toujours de l’index 0.
-   */
   getNextTrackIndex(){
     const playlistEl = this.shadowRoot.querySelector('#playlist');
     if(!playlistEl) return undefined;
@@ -374,11 +336,10 @@ class MyAudioPlayer extends HTMLElement {
 
   _dockCard(card, targetPh) {
     const phs = [...this.shadowRoot.querySelectorAll('.card-placeholder')];
-    // If no target specified, find the card's own placeholder first, else first available
     if (!targetPh) {
       targetPh = phs.find(p => p.dataset.for === card.dataset.card) || phs[0];
     }
-    if (!targetPh) return; // No slots available; stay detached
+    if (!targetPh) return;
     card.classList.remove('detached');
     card.style.removeProperty('left');
     card.style.removeProperty('top');
@@ -391,16 +352,11 @@ class MyAudioPlayer extends HTMLElement {
 
   defineListeners(){
     const audioElement = this.shadowRoot.querySelector('#myplayer');
-    const playButton = this.shadowRoot.querySelector('#playbtn');
-    const pauseButton = this.shadowRoot.querySelector('#pausebtn');
-    const volumeSlider = this.shadowRoot.querySelector('#volumeslider');
-    const knobVolume = this.shadowRoot.querySelector('#Knobvolume');
-    const balanceSlider = this.shadowRoot.querySelector('#balanceslider');
-    const volMeter = this.shadowRoot.querySelector('#volMeter');
+    const controls = this.shadowRoot.querySelector('#playerControls');
 
     const viz = this.shadowRoot.querySelector('#viz');
-    playButton.addEventListener('click', async ()=>{
-      this.initAudioGraph(audioElement, {volumeSlider, balanceSlider});
+    controls.addEventListener('controls-play', async ()=>{
+      this.initAudioGraph(audioElement, controls);
       await this.ensureAudioContextRunning();
       try {
         await audioElement.play();
@@ -457,7 +413,7 @@ class MyAudioPlayer extends HTMLElement {
         const idx = e.detail.index;
         const track = this.playlistData[idx];
         if (track && audioElement) {
-          this.initAudioGraph(audioElement, {volumeSlider, balanceSlider});
+          this.initAudioGraph(audioElement, controls);
           await this.ensureAudioContextRunning();
           audioElement.src = track.src;
           this.currentIndex = idx;
@@ -476,7 +432,12 @@ class MyAudioPlayer extends HTMLElement {
         const d = e.detail;
         switch(d.action){
           case 'add':
-            if(d.track !== undefined) this.playlistData.splice(d.index, 0, d.track);
+            if(d.track !== undefined) {
+              this.playlistData.splice(d.index, 0, d.track);
+              if (typeof this.currentIndex === 'number' && this.currentIndex !== -1 && this.currentIndex >= d.index) {
+                this.currentIndex++;
+              }
+            }
             break;
           case 'remove':
             this.playlistData.splice(d.index, 1);
@@ -542,7 +503,7 @@ class MyAudioPlayer extends HTMLElement {
             tAudio.src = objectUrl;
             tAudio.addEventListener('loadedmetadata', ()=>{
               track.duration = tAudio.duration;
-              playlistEl.updateList && playlistEl.updateList();
+              playlistEl.updateList();
             });
           });
           fileInput.value = '';
@@ -559,58 +520,30 @@ class MyAudioPlayer extends HTMLElement {
       if(statusEl) statusEl.textContent = 'Erreur de lecture du média';
     });
 
-    const nextBtn = this.shadowRoot.querySelector('#nextbtn');
-    const prevBtn = this.shadowRoot.querySelector('#prevbtn');
-    const shuffleBtn = this.shadowRoot.querySelector('#shufflebtn');
-    const loopBtn = this.shadowRoot.querySelector('#loopbtn');
+    controls.addEventListener('controls-next', () => this.playNext());
+    controls.addEventListener('controls-prev', () => this.playPrevious());
+    controls.addEventListener('controls-shuffle', () => {
+      this.toggleShuffle();
+      controls.setShuffleActive(this.shuffle);
+    });
+    controls.addEventListener('controls-loop', () => {
+      this.toggleLoop();
+      controls.setLoopMode(this.loopMode);
+    });
 
-    if(nextBtn){
-      nextBtn.addEventListener('click', ()=>{
-        this.playNext();
-      });
-    }
-    if(prevBtn){
-      prevBtn.addEventListener('click', ()=>{
-        this.playPrevious();
-      });
-    }
-    if(shuffleBtn){
-      shuffleBtn.addEventListener('click', ()=>{
-        this.toggleShuffle();
-        shuffleBtn.classList.toggle('active', this.shuffle);
-      });
-    }
-    if(loopBtn){
-      loopBtn.addEventListener('click', ()=>{
-        this.toggleLoop();
-        loopBtn.classList.toggle('active', this.loopMode > 0);
-        loopBtn.textContent = this.loopMode === 0 ? '🔁 Loop' : this.loopMode === 1 ? '🔁 All' : '🔂 One';
-      });
-    }
-
-    pauseButton.addEventListener('click', ()=>{
+    controls.addEventListener('controls-pause', ()=>{
       audioElement.pause();
       viz.stop?.();
     });
 
-    volumeSlider.addEventListener('input', (e)=>{
-      const v = Number(e.target.value);
-      if (knobVolume) knobVolume.value = v;
+    controls.addEventListener('controls-volume', (e)=>{
+      const v = e.detail.value;
       if (this.gainNode) this.gainNode.gain.setValueAtTime(v, this.audioContext.currentTime);
       else audioElement.volume = v;
     });
 
-    if (knobVolume){
-      knobVolume.addEventListener('input', (e)=>{
-        const v = Number(e.target.value);
-        volumeSlider.value = v;
-        if (this.gainNode) this.gainNode.gain.setValueAtTime(v, this.audioContext.currentTime);
-        else audioElement.volume = v;
-      });
-    }
-
-    balanceSlider.addEventListener('input', (e)=>{
-      const p = Number(e.target.value);
+    controls.addEventListener('controls-balance', (e)=>{
+      const p = e.detail.value;
       if (this.pannerNode) this.pannerNode.pan.setValueAtTime(p, this.audioContext.currentTime);
     });
 
@@ -627,7 +560,7 @@ class MyAudioPlayer extends HTMLElement {
       }
       const rms = Math.sqrt(sumSq/timeData.length);
       const pct = Math.min(100, Math.max(0, rms * 140));
-      if (volMeter) volMeter.style.width = pct + '%';
+      controls.setMeterPercent(pct);
     };
 
     audioElement.addEventListener('play', () => {
@@ -635,11 +568,11 @@ class MyAudioPlayer extends HTMLElement {
     });
     audioElement.addEventListener('pause', () => {
       this._meterRunning = false;
-      if (volMeter) volMeter.style.width = '0%';
+      controls.setMeterPercent(0);
     });
     audioElement.addEventListener('ended', () => {
       this._meterRunning = false;
-      if (volMeter) volMeter.style.width = '0%';
+      controls.setMeterPercent(0);
     });
 
     this._boundKeyHandler = (ev) => {
@@ -656,7 +589,6 @@ class MyAudioPlayer extends HTMLElement {
     };
     window.addEventListener('keydown', this._boundKeyHandler);
 
-    // === Detachable Panels with Magnet Snap ===
     let dragCard = null, dragOffX = 0, dragOffY = 0;
     const shadowRoot = this.shadowRoot;
     const gridEl = shadowRoot.querySelector('.grid');
@@ -685,7 +617,6 @@ class MyAudioPlayer extends HTMLElement {
     });
 
     this._boundDragMove = (e) => {
-      // === Grid gutter resize ===
       if (gutterDrag !== null) {
         const delta = e.clientX - gutterStartPos;
         if (gutterDrag.type === 'col') {
@@ -711,7 +642,6 @@ class MyAudioPlayer extends HTMLElement {
       const w = dragCard.offsetWidth;
       const h = dragCard.offsetHeight;
 
-      // Magnet snap to other detached panels
       const others = [...shadowRoot.querySelectorAll('.card.detached')].filter(c => c !== dragCard);
       for (const o of others) {
         const r = o.getBoundingClientRect();
@@ -729,7 +659,6 @@ class MyAudioPlayer extends HTMLElement {
       dragCard.style.left = x + 'px';
       dragCard.style.top = y + 'px';
 
-      // Visual feedback: highlight placeholder under cursor
       const phs = shadowRoot.querySelectorAll('.card-placeholder');
       phs.forEach(ph => {
         const r = ph.getBoundingClientRect();
@@ -739,7 +668,6 @@ class MyAudioPlayer extends HTMLElement {
     };
 
     this._boundDragUp = (e) => {
-      // === Grid gutter resize end ===
       if (gutterDrag !== null) {
         gutterDrag = null;
         shadowRoot.querySelectorAll('.grid-gutter').forEach(g => g.classList.remove('active'));
@@ -747,7 +675,6 @@ class MyAudioPlayer extends HTMLElement {
       }
 
       if (!dragCard) return;
-      // Check if dropped over a placeholder → dock there
       const phs = [...shadowRoot.querySelectorAll('.card-placeholder')];
       phs.forEach(p => p.classList.remove('drag-hover'));
       for (const ph of phs) {
@@ -763,8 +690,6 @@ class MyAudioPlayer extends HTMLElement {
 
     window.addEventListener('mousemove', this._boundDragMove);
     window.addEventListener('mouseup', this._boundDragUp);
-
-    // === Grid Resize Gutters ===
 
     const createGutter = (cls) => {
       const g = document.createElement('div');
@@ -862,15 +787,15 @@ class MyAudioPlayer extends HTMLElement {
   setVolume(val){
     const v = Number(val);
     if(this.gainNode) this.gainNode.gain.setValueAtTime(v, this.audioContext.currentTime);
-    const volSlider = this.shadowRoot.querySelector('#volumeslider');
-    if(volSlider) volSlider.value = v;
+    const ctr = this.shadowRoot.querySelector('#playerControls');
+    if(ctr && ctr.setVolumeValue) ctr.setVolumeValue(v);
   }
 
   setBalance(val){
     const p = Number(val);
     if(this.pannerNode) this.pannerNode.pan.setValueAtTime(p, this.audioContext.currentTime);
-    const balSlider = this.shadowRoot.querySelector('#balanceslider');
-    if(balSlider) balSlider.value = p;
+    const ctr = this.shadowRoot.querySelector('#playerControls');
+    if(ctr && ctr.setBalanceValue) ctr.setBalanceValue(p);
   }
 
   getAudioContext(){ return this.audioContext; }

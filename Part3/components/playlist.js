@@ -21,6 +21,8 @@ class MyPlaylist extends HTMLElement {
     this.current = -1;
     this.draggedIndex = null;
     this._rendered = false;
+    this.removedStack = [];
+    this._maxRemovedHistory = 40;
   }
 
   connectedCallback(){
@@ -28,20 +30,42 @@ class MyPlaylist extends HTMLElement {
       this.render();
       this._rendered = true;
     }
+    this._hydrateFromTracksAttr();
+  }
+
+  _hydrateFromTracksAttr(){
+    const attr = this.getAttribute('data-tracks') || this.getAttribute('tracks');
+    if (!attr) return;
+    try {
+      const arr = JSON.parse(attr);
+      if (Array.isArray(arr) && arr.length) this.setTracks(arr);
+    } catch (e) {
+      console.warn('playlist: invalid JSON for tracks attribute', e);
+    }
   }
 
   disconnectedCallback(){
-    this.tracks.forEach(t => {
+    const revoke = (t) => {
       if (t.src && t.src.startsWith('blob:')) {
         try { URL.revokeObjectURL(t.src); } catch(e){}
       }
-    });
+    };
+    this.tracks.forEach(revoke);
+    this.removedStack.forEach(({ track }) => revoke(track));
   }
 
   render(){
     this.shadowRoot.innerHTML = `
       <link rel="stylesheet" href="${new URL('../css/playlist.css', import.meta.url)}">
-      <ul id="list"></ul>
+      <ul id="list" class="fx-scrollbar-y"></ul>
+      <div class="removed-panel" part="removed-panel" hidden>
+        <div class="removed-head">
+          <span class="removed-title">Supprimées récemment</span>
+          <button type="button" class="btn-undo" id="btnUndoLast" title="Remettre la dernière piste supprimée">↩ Annuler</button>
+          <button type="button" class="btn-clear-trash" id="btnClearTrash" title="Oublier l’historique sans restaurer">Vider</button>
+        </div>
+        <ul class="removed-list fx-scrollbar-y" id="removedList" aria-label="Pistes supprimées récemment"></ul>
+      </div>
     `;
     const ul = this.shadowRoot.querySelector('#list');
     ul.addEventListener('dragover', (e)=>{
@@ -59,6 +83,10 @@ class MyPlaylist extends HTMLElement {
       }
       this.onDragEnd(e);
     });
+    const btnUndo = this.shadowRoot.querySelector('#btnUndoLast');
+    const btnClear = this.shadowRoot.querySelector('#btnClearTrash');
+    if (btnUndo) btnUndo.addEventListener('click', () => this.restoreLastRemoved());
+    if (btnClear) btnClear.addEventListener('click', () => this.clearRemovedHistory());
     this.updateList();
   }
 
@@ -76,7 +104,7 @@ class MyPlaylist extends HTMLElement {
       const info = document.createElement('div');
       info.className = 'track-info';
       const title = document.createElement('div');
-      title.className = 'track-title';
+      title.className = 'track-title fx-scrollbar-y';
       title.textContent = t.title || `Track ${i+1}`;
       const dur = document.createElement('div');
       dur.className = 'track-dur';
@@ -112,7 +140,40 @@ class MyPlaylist extends HTMLElement {
       
       ul.appendChild(li);
     });
+    this._renderRemovedList();
+  }
 
+  _renderRemovedList(){
+    const panel = this.shadowRoot.querySelector('.removed-panel');
+    const rList = this.shadowRoot.querySelector('#removedList');
+    const btnUndo = this.shadowRoot.querySelector('#btnUndoLast');
+    if (!panel || !rList) return;
+    const has = this.removedStack.length > 0;
+    panel.hidden = !has;
+    if (btnUndo) btnUndo.disabled = !has;
+    rList.innerHTML = '';
+    for (let s = this.removedStack.length - 1; s >= 0; s--) {
+      const entry = this.removedStack[s];
+      const li = document.createElement('li');
+      li.className = 'removed-item';
+      const t = entry.track;
+      const titleSpan = document.createElement('span');
+      titleSpan.className = 'removed-item-title';
+      titleSpan.textContent = t.title || t.src || 'Piste';
+      li.appendChild(titleSpan);
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn-restore';
+      btn.textContent = 'Restaurer';
+      btn.setAttribute('aria-label', `Restaurer ${t.title || 'piste'}`);
+      const stackIndex = s;
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.restoreRemovedAt(stackIndex);
+      });
+      li.appendChild(btn);
+      rList.appendChild(li);
+    }
   }
 
   onDragStart(e, index){
@@ -154,9 +215,13 @@ class MyPlaylist extends HTMLElement {
   }
 
   setTracks(list){
-    /* Copie : ne pas partager la référence avec le parent (sinon push/addTrack + splice parent = doublons). */
+    if (!this._rendered) {
+      this.render();
+      this._rendered = true;
+    }
     this.tracks = Array.isArray(list) ? [...list] : [];
     this.current = -1;
+    this.removedStack = [];
     this.updateList();
   }
 
@@ -174,11 +239,56 @@ class MyPlaylist extends HTMLElement {
 
   removeTrack(index){
     if(index < 0 || index >= this.tracks.length) return;
-    const removed = this.tracks.splice(index, 1)[0];
+    const removed = this.tracks[index];
+    this.removedStack.push({ track: removed, index });
+    if (this.removedStack.length > this._maxRemovedHistory) this.removedStack.shift();
+    this.tracks.splice(index, 1);
     if(this.current === index) this.current = -1;
     else if(this.current > index) this.current--;
     this.updateList();
     this.dispatchEvent(new CustomEvent('playlist-changed', { detail: { action: 'remove', index, track: removed }, bubbles: true, composed: true }));
+  }
+
+  restoreLastRemoved(){
+    if (!this.removedStack.length) return;
+    const entry = this.removedStack.pop();
+    this._insertTrackAt(entry.track, entry.index);
+  }
+
+  restoreRemovedAt(stackIndex){
+    if (stackIndex < 0 || stackIndex >= this.removedStack.length) return;
+    const entry = this.removedStack.splice(stackIndex, 1)[0];
+    this._insertTrackAt(entry.track, entry.index);
+  }
+
+  clearRemovedHistory(){
+    this.removedStack = [];
+    this._renderRemovedList();
+  }
+
+  getRemovedHistory(){
+    return this.removedStack.map(e => ({ ...e, track: { ...e.track } }));
+  }
+
+  _probeDuration(track){
+    if ((track.duration === undefined || track.duration === 0) && track.src) {
+      const tAudio = document.createElement('audio');
+      tAudio.preload = 'metadata';
+      tAudio.src = track.src;
+      tAudio.addEventListener('loadedmetadata', () => {
+        track.duration = tAudio.duration;
+        this.updateList();
+      });
+    }
+  }
+
+  _insertTrackAt(track, preferIndex){
+    const at = Math.max(0, Math.min(preferIndex | 0, this.tracks.length));
+    this.tracks.splice(at, 0, track);
+    if (this.current !== -1 && this.current >= at) this.current++;
+    this._probeDuration(track);
+    this.updateList();
+    this.dispatchEvent(new CustomEvent('playlist-changed', { detail: { action: 'add', index: at, track }, bubbles: true, composed: true }));
   }
 
   reorderTrack(from, to){
@@ -210,18 +320,11 @@ class MyPlaylist extends HTMLElement {
   }
 
   addTrack(track){
+    const index = this.tracks.length;
     this.tracks.push(track);
-    if((track.duration === undefined || track.duration === 0) && track.src){
-      const tAudio = document.createElement('audio');
-      tAudio.preload = 'metadata';
-      tAudio.src = track.src;
-      tAudio.addEventListener('loadedmetadata', ()=>{
-        track.duration = tAudio.duration;
-        this.updateList();
-      });
-    }
+    this._probeDuration(track);
     this.updateList();
-    this.dispatchEvent(new CustomEvent('playlist-changed', { detail: { action: 'add', index: this.tracks.length - 1, track }, bubbles: true, composed: true }));
+    this.dispatchEvent(new CustomEvent('playlist-changed', { detail: { action: 'add', index, track }, bubbles: true, composed: true }));
   }
 }
 

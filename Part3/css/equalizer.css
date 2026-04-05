@@ -5,6 +5,19 @@
   font-family: var(--fx-font-ui);
   font-size: 12px;
   color: var(--fx-text);
+  scrollbar-width: thin;
+  scrollbar-color: var(--fx-border-strong) transparent;
+}
+:host::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+:host::-webkit-scrollbar-track {
+  background: transparent;
+}
+:host::-webkit-scrollbar-thumb {
+  background: var(--fx-border-strong);
+  border-radius: 4px;
 }
 .eq { display: flex; flex-direction: column; gap: 4px; }
 .top { display: flex; align-items: center; gap: 6px; justify-content: space-between; }

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Isolé — my-player-controls</title>
+  <link rel="stylesheet" href="./css/theme-futuristic.css" />
+  <style>
+    :root { color-scheme: dark; }
+    body {
+      margin: 0;
+      min-height: 100%;
+      padding: 20px;
+      box-sizing: border-box;
+      background: radial-gradient(ellipse 90% 40% at 50% 0%, rgba(0, 60, 100, 0.35), transparent 50%),
+        linear-gradient(180deg, #030308, #060a14);
+      color: var(--fx-text);
+      font-family: var(--fx-font-ui), system-ui, sans-serif;
+      max-width: 520px;
+      margin-inline: auto;
+    }
+    h1 {
+      font-family: var(--fx-font-display), system-ui, sans-serif;
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      color: var(--fx-cyan);
+    }
+    .note {
+      font-size: 12px;
+      color: var(--fx-text-dim);
+      line-height: 1.5;
+      margin: 10px 0 14px;
+    }
+    .note a { color: var(--fx-cyan); }
+    #log {
+      font-family: ui-monospace, monospace;
+      font-size: 11px;
+      line-height: 1.45;
+      color: var(--fx-magenta);
+      margin-top: 14px;
+      white-space: pre-wrap;
+      min-height: 3em;
+    }
+    my-player-controls {
+      display: block;
+      margin-top: 12px;
+      padding: 12px;
+      border: 1px solid var(--fx-border);
+      border-radius: var(--fx-radius);
+      background: rgba(8, 16, 36, 0.85);
+    }
+    audio { width: 100%; margin-top: 12px; border-radius: 8px; }
+  </style>
+</head>
+<body>
+  <h1>&lt;my-player-controls&gt; seul</h1>
+  <p class="note">
+    Le composant <strong>ne fait qu’émettre des événements</strong> : il ne connaît ni <code>&lt;audio&gt;</code> ni <code>AudioContext</code>.
+    Cette page branche manuellement lecture / pause / <strong>volume</strong> sur l’élément <code>audio</code>.
+    La <strong>balance</strong> n’a aucun effet tant qu’aucun hôte ne relie <code>controls-balance</code> à un <code>StereoPannerNode</code> (voir <a href="./integration-host-app.html">integration-host-app.html</a>, étape 3).
+    Contrat : <a href="./SPECIFICATION.md">SPECIFICATION.md</a> (<code>my-player-controls</code>).
+  </p>
+  <input type="file" id="pick" accept="audio/*" style="font-size:12px;margin-bottom:8px;" />
+  <audio id="media" controls></audio>
+  <my-player-controls id="ctrl"></my-player-controls>
+  <div id="log"></div>
+
+  <script type="module">
+    import './components/playercontrols.js';
+
+    const ctrl = document.getElementById('ctrl');
+    const log = document.getElementById('log');
+    const audio = document.getElementById('media');
+    const pick = document.getElementById('pick');
+
+    function line(msg) {
+      log.textContent = `${msg}\n${log.textContent}`.slice(0, 3500);
+    }
+
+    pick.addEventListener('change', () => {
+      const f = pick.files?.[0];
+      if (!f) return;
+      audio.src = URL.createObjectURL(f);
+      line(`fichier : ${f.name}`);
+    });
+
+    ctrl.addEventListener('controls-play', () => {
+      line('controls-play');
+      audio.play().catch(() => line('lecture refusée (autoplay / fichier)'));
+    });
+    ctrl.addEventListener('controls-pause', () => {
+      line('controls-pause');
+      audio.pause();
+    });
+    ctrl.addEventListener('controls-next', () => line('controls-next'));
+    ctrl.addEventListener('controls-prev', () => line('controls-prev'));
+    ctrl.addEventListener('controls-shuffle', () => line('controls-shuffle'));
+    ctrl.addEventListener('controls-loop', () => line('controls-loop'));
+    ctrl.addEventListener('controls-volume', (e) => {
+      const v = Number(e.detail.value);
+      audio.volume = v;
+      line(`controls-volume → audio.volume = ${v.toFixed(2)}`);
+    });
+    ctrl.addEventListener('controls-balance', (e) => {
+      line(`controls-balance ${e.detail.value} (sans graphe Web Audio : pas d’effet sonore ici)`);
+    });
+
+    line('Prêt — chargez un audio ou utilisez les boutons.');
+  </script>
+</body>
+</html>

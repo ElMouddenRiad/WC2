@@ -2,19 +2,35 @@
 
 Documentation complète de l'API de chaque Web Component du projet lecteur audio.
 
+Chaque composant maison est décrit avec la même structure que l’exemple du cours ([webaudio-controls — Detail & Specs](https://g200kg.github.io/webaudio-controls/docs/detailspecs.html)) : **tag**, **attributs HTML**, **méthodes** publiques, **propriétés** exposées (ou politique explicite), **événements émis**, **événements écoutés** (comportement interne ou contrat avec l’hôte).
+
+---
+
+## Bibliothèque tierce : `webaudio-controls` (fichier local)
+
+| | |
+|--|--|
+| **Fichier** | `components/libs/webaudiocontrols.js` |
+| **Rôle** | Enregistre les custom elements `webaudio-knob`, `webaudio-slider`, `webaudio-switch`, `webaudio-param`, `webaudio-keyboard`. |
+| **Chargement** | Uniquement via `import './libs/webaudiocontrols.js'` dans un **module** qui en a besoin. **Interdit** dans les pages HTML du projet : `<script src="...webaudiocontrols.js">`. |
+| **Utilisé par** | `<my-player-controls>` (`playercontrols.js`) — knob volume ; `<my-equalizer>` (`myequalizer.js`) — sliders EQ. `<my-audio-player>` importe `playercontrols.js`, pas `webaudiocontrols.js` directement. |
+| **Doc complète (attributs, `setValue`, `input` / `change`, etc.)** | [g200kg — Detail&Specs](https://g200kg.github.io/webaudio-controls/docs/detailspecs.html) |
+
 ---
 
 ## Table des matières
 
-1. [`<my-audio-player>`](#my-audio-player)
-2. [`<my-equalizer>`](#my-equalizer)
-3. [`<my-visualizer>`](#my-visualizer)
-4. [`<my-playlist>`](#my-playlist)
-5. [`<wam-plugin>`](#wam-plugin)
-6. [Communication inter-composants](#communication-inter-composants)
-7. [Graphe audio](#graphe-audio)
-8. [Intégration dans une autre application audio](#intégration-dans-une-autre-application-audio)
-9. [Décisions de design](#décisions-de-design)
+1. [Bibliothèque tierce `webaudio-controls` (fichier local)](#bibliothèque-tierce--webaudio-controls-fichier-local)
+2. [`<my-audio-player>`](#my-audio-player)
+3. [`<my-equalizer>`](#my-equalizer)
+4. [`<my-visualizer>`](#my-visualizer)
+5. [`<my-playlist>`](#my-playlist)
+6. [`<my-player-controls>`](#my-player-controls)
+7. [`<wam-plugin>`](#wam-plugin)
+8. [Communication inter-composants](#communication-inter-composants)
+9. [Graphe audio](#graphe-audio)
+10. [Intégration dans une autre application audio](#intégration-dans-une-autre-application-audio)
+11. [Décisions de design](#décisions-de-design)
 
 ---
 
@@ -22,7 +38,7 @@ Documentation complète de l'API de chaque Web Component du projet lecteur audio
 
 **Tag** : `<my-audio-player>`  
 **Fichier** : `components/audioplayer.js`  
-**CSS** : `css/player.css`  
+**CSS** : `css/player.css` (importe `css/player-shell.css`, partagé avec `modular-app.css` pour la même apparence hors Shadow DOM)  
 **Rôle** : Composant orchestrateur principal. Crée le graphe Web Audio, instancie et connecte les sous-composants (EQ, visualizer, playlist, WAM).
 
 ### Attributs HTML
@@ -51,20 +67,27 @@ Documentation complète de l'API de chaque Web Component du projet lecteur audio
 | `getPannerNode()` | — | `StereoPannerNode` | Accès au nœud de balance |
 | `getAnalyserNode()` | — | `AnalyserNode` | Accès au nœud d'analyse |
 
-### Propriétés (accès programmatique)
+### Propriétés exposées (JavaScript)
 
-Les états utiles depuis l’extérieur passent surtout par les **méthodes** ci-dessus. Les champs internes (`audioContext`, `currentIndex`, etc.) existent sur l’instance mais ne font pas partie d’une API officielle « propriété JS » documentée — préférer `getAudioContext()`, etc.
+| Politique | Détail |
+|-----------|--------|
+| **API stable** | Aucune propriété « getter/setter » dédiée sur `<my-audio-player>`. Utiliser les **méthodes** (`setVolume`, `getAudioContext`, etc.). |
+| **Champs internes** | `audioContext`, `currentIndex`, `playlistData`, etc. existent sur l’instance mais **ne font pas partie du contrat public** ; ne pas s’y fier dans une intégration tierce. |
+
+### Événements émis
+
+| Événement | Description |
+|-----------|-------------|
+| *(aucun)* | Le lecteur ne définit pas de `CustomEvent` propre. Les notifications vers l’extérieur passent par les sous-composants (`play-track`, `eq-change`, `wam-loaded`, …) avec `composed: true`, réémissibles jusqu’à l’hôte `<my-audio-player>`. |
 
 ### Événements écoutés (comportement interne)
 
 | Source | Événement | Rôle |
 |--------|-----------|------|
 | `<audio id="myplayer">` | `loadedmetadata`, `timeupdate`, `progress`, `play`, `pause`, `ended`, `error` | Barre de progression, durées, transport, enchaînement des pistes |
-| `<my-playlist>` | `play-track`, `playlist-changed` | Synchronisation lecture / liste (ces événements sont aussi `composed`, voir ci-dessous) |
-| Contrôles UI | `input` / `click` | Volume, balance, transport, ajout de pistes |
-| `window` | `keydown` | Raccourcis clavier globaux |
-
-Le lecteur **n’émet pas** aujourd’hui de `CustomEvent` propre vers le document ; pour réagir aux changements de piste ou d’EQ depuis la page hôte, écouter les événements **composés** remontés par les sous-composants (`play-track`, `eq-change`, etc.) sur `document` ou sur `<my-audio-player>`.
+| `<my-playlist>` | `play-track`, `playlist-changed` | Synchronisation lecture / liste |
+| Contrôles UI (dont `webaudio-knob` volume) | `input`, `change`, `click` | Volume, balance, transport, ajout de pistes ; le knob suit les événements décrits dans la doc webaudio-controls |
+| `window` | `mousemove`, `mouseup`, `keydown` | Panneaux détachables, redimensionnement de grille, raccourcis clavier |
 
 ### Cycle de vie W3C
 
@@ -100,6 +123,12 @@ Le lecteur **n’émet pas** aujourd’hui de `CustomEvent` propre vers le docum
 | `isBypassed()` | — | `boolean` | État du bypass |
 | `disconnectAll()` | — | `void` | Déconnecte tous les nœuds audio |
 
+### Propriétés exposées (JavaScript)
+
+| Propriété | Type | Stable ? | Description |
+|-----------|------|----------|-------------|
+| *(aucune documentée)* | — | — | Préférer `isBypassed()`, `getOutput()`, `applyPreset()`, etc. Les tableaux `filters`, `bandFreqs`, `presets` sont des détails d’implémentation. |
+
 ### Événements émis
 
 | Événement | `detail` | `bubbles` | `composed` | Quand |
@@ -108,6 +137,14 @@ Le lecteur **n’émet pas** aujourd’hui de `CustomEvent` propre vers le docum
 | `eq-preset` | `{preset}` | oui | oui | Un preset est sélectionné dans le menu |
 | `eq-preset-applied` | `{name}` | oui | oui | Un preset est appliqué programmatiquement |
 | `eq-bypass` | `{bypassed}` | oui | oui | Le bypass est activé/désactivé |
+
+### Événements écoutés
+
+| Source | Événement | Rôle |
+|--------|-----------|------|
+| `webaudio-slider` (chaque bande) | `input`, `change` | Mise à jour des gains des `BiquadFilterNode` ; émission de `eq-change` |
+| `#presetSelect` | `change` | Choix de preset → `eq-preset` |
+| `#bypassBtn` | `click` | Toggle bypass → `eq-bypass` |
 
 ### Cycle de vie W3C
 
@@ -148,6 +185,19 @@ Le lecteur **n’émet pas** aujourd’hui de `CustomEvent` propre vers le docum
 | `mode` | `string` | Mode actuel (`spectrum` ou `waveform`) |
 | `frameRate` | `number` | FPS cible (défaut: 30) |
 
+### Événements émis
+
+| Événement | Description |
+|-----------|-------------|
+| *(aucun)* | Pas de `CustomEvent` ; le rendu est entièrement piloté par `setAnalyser` + `start()` / `stop()`. |
+
+### Événements écoutés
+
+| Source | Événement | Rôle |
+|--------|-----------|------|
+| Boutons mode (shadow interne) | `click` | Bascule spectrum / waveform |
+| *(aucun autre contrat public)* | — | — |
+
 ### Cycle de vie W3C
 
 - `constructor()` : `attachShadow`, initialisation (aucun rendu)
@@ -164,6 +214,8 @@ Le lecteur **n’émet pas** aujourd’hui de `CustomEvent` propre vers le docum
 **Fichier** : `components/playlist.js`  
 **CSS** : `css/playlist.css`  
 **Rôle** : Gestion de la liste de pistes audio avec drag & drop, suppression, navigation clavier.
+
+**Note (fichiers / URL)** : Le formulaire « Add URL » / « Files… » du lecteur monolithique est rendu par **`<my-audio-player>`** (carte playlist), pas à l’intérieur du shadow de `<my-playlist>`. Le composant expose `addTrack` / `setTracks` ; c’est à la **page hôte** de brancher un `<input type="file">` ou un champ URL (voir `isolated-playlist.html`).
 
 ### Attributs HTML
 
@@ -185,6 +237,17 @@ Le lecteur **n’émet pas** aujourd’hui de `CustomEvent` propre vers le docum
 | `nextIndex()` | — | `number \| undefined` | Index de la piste suivante |
 | `previousIndex()` | — | `number \| undefined` | Index de la piste précédente |
 | `getTracks()` | — | `Array` | Copie de la liste de pistes |
+| `restoreLastRemoved()` | — | `void` | Remet la **dernière** piste supprimée (LIFO) à sa position d’origine si possible ; émet `playlist-changed` (`add`) |
+| `restoreRemovedAt(stackIndex)` | `number` | `void` | Restaure l’entrée d’historique à l’indice `stackIndex` (`0` = plus ancienne dans la pile interne) |
+| `clearRemovedHistory()` | — | `void` | Vide la liste des suppressions récentes **sans** restaurer les pistes (l’UI « Supprimées » disparaît) |
+| `getRemovedHistory()` | — | `Array` | Copie des entrées `{ track, index }` encore récupérables |
+
+### Propriétés exposées (JavaScript)
+
+| Propriété | Type | Stable ? | Description |
+|-----------|------|----------|-------------|
+| `tracks` | `Array` | partiel | Tableau courant des pistes ; **`getTracks()`** est préférable pour une copie sûre. |
+| `current` | `number` | partiel | Index de surbrillance / sélection interne ; l’API préférée pour la logique métier reste `play(index)` et les événements. |
 
 ### Événements émis
 
@@ -193,13 +256,70 @@ Le lecteur **n’émet pas** aujourd’hui de `CustomEvent` propre vers le docum
 | `play-track` | `{index}` | oui | oui | Clic sur une piste ou appel à `play()` |
 | `playlist-changed` | `{action, index, track?, from?, to?}` | oui | oui | Ajout, suppression, ou réordonnancement |
 
+### Événements écoutés
+
+| Source | Événement | Rôle |
+|--------|-----------|------|
+| Liste des pistes (shadow) | `click`, `keydown` | Lecture, suppression, navigation clavier |
+| Drag & drop | `dragstart`, `dragover`, `drop`, etc. | Réordonnancement |
+| `#btnUndoLast`, `#btnClearTrash`, boutons « Restaurer » | `click` | Annuler dernière suppression, vider l’historique, restaurer une piste précise |
+
 ### Cycle de vie W3C
 
 - `constructor()` : `attachShadow`, initialisation (aucun rendu)
-- `connectedCallback()` : Premier rendu (avec garde `_rendered`)
-- `disconnectedCallback()` : Libération des blob URLs (`URL.revokeObjectURL`)
+- `connectedCallback()` : Premier rendu (avec garde `_rendered`), puis si `tracks` / `data-tracks` est déjà présent dans le HTML, application du JSON via `setTracks`
+- `disconnectedCallback()` : Libération des blob URLs des pistes actives **et** de l’historique de suppression (`URL.revokeObjectURL`)
 - `attributeChangedCallback` : Parse et applique le JSON si `tracks` / `data-tracks` change
 - `observedAttributes` : `['tracks', 'data-tracks']`
+
+---
+
+## `<my-player-controls>`
+
+**Tag** : `<my-player-controls>`  
+**Fichier** : `components/playercontrols.js`  
+**CSS** : `css/player-controls.css`  
+**Rôle** : Transport (play / pause / prev / next / shuffle / loop), volume (slider + `webaudio-knob`), balance, VU-mètre (affichage). Le composant **n’ouvre aucune connexion** tout seul : l’**hôte** écoute les `CustomEvent` `controls-*` et les relie à `<audio>`, à la playlist, au `GainNode` / `StereoPannerNode`, ou à l’analyseur selon l’architecture. Dans `<my-audio-player>` et `modular-player.js`, ce branchement est fait par le script du lecteur ; dans `integration-host-app.html` la séquence prévue est **étape 2** (montage + événements) puis **étape 3** (`createMediaElementSource`, gain, panoramique) ; si l’étape 2 n’a pas été validée, le montage et le câblage des événements sont exécutés au premier clic sur l’étape 3. Volume sur `HTMLMediaElement.volume` puis sur le `GainNode` maître ; balance sur `StereoPannerNode` après l’étape 3 ; VU alimenté par l’`AnalyserNode` après l’étape 6. Démo : `isolated-controls.html` — l’hôte relie `controls-volume` à `audio.volume` et laisse `controls-balance` sans cible audio (aucun `StereoPannerNode`), ce qui illustre le contrat : sans graphe Web Audio, la balance n’a pas d’effet audible.
+
+### Attributs HTML
+
+| Attribut | Type | Description |
+|----------|------|-------------|
+| *(aucun observé)* | — | Pas d’`observedAttributes` dans cette version. |
+
+### Méthodes publiques
+
+| Méthode | Paramètres | Retour | Description |
+|---------|------------|--------|-------------|
+| `getVolumeValue()` | — | `number` | Volume 0–1 |
+| `getBalanceValue()` | — | `number` | Pan −1…1 |
+| `setVolumeValue(v)` | `number` | `void` | Synchronise slider + knob |
+| `setBalanceValue(p)` | `number` | `void` | Synchronise balance |
+| `setMeterPercent(pct)` | `number` | `void` | Largeur du VU (0–100) |
+| `setShuffleActive(on)` | `boolean` | `void` | État visuel shuffle |
+| `setLoopMode(mode)` | `0 \| 1 \| 2` | `void` | Libellé / état loop (off / all / one) |
+
+### Événements émis (`bubbles` + `composed`)
+
+| Événement | `detail` | Quand |
+|-----------|----------|-------|
+| `controls-play` | — | Play |
+| `controls-pause` | — | Pause |
+| `controls-next` | — | Piste suivante |
+| `controls-prev` | — | Piste précédente |
+| `controls-shuffle` | — | Clic shuffle (le parent bascule l’état) |
+| `controls-loop` | — | Clic loop (le parent avance le mode) |
+| `controls-volume` | `{ value }` | `input` volume |
+| `controls-balance` | `{ value }` | `input` balance |
+
+### Placement UI
+
+Dans le lecteur principal, le bloc est dans une carte de la grille (`player.css`, zones `slot1`–`slot5`). Sur `modular-player.html`, les cartes sont créées à l’activation d’un module et insérées dans des emplacements vides (`dock-slot`) ; elles peuvent être détachées puis déposées sur un autre emplacement.
+
+### Cycle de vie W3C
+
+- `constructor()` → `attachShadow({ mode: 'open' })`
+- `connectedCallback()` : premier rendu + branchement des écouteurs internes
 
 ---
 
@@ -231,6 +351,12 @@ Le lecteur **n’émet pas** aujourd’hui de `CustomEvent` propre vers le docum
 | `destroyPlugin()` | — | `void` | Détruit le plugin et restaure le passthrough |
 | `isBypassed()` | — | `boolean` | État du bypass |
 
+### Propriétés exposées (JavaScript)
+
+| Propriété | Type | Stable ? | Description |
+|-----------|------|----------|-------------|
+| *(aucune documentée)* | — | — | État du plugin et URL gérés en interne ; utiliser les méthodes et les événements `wam-*`. |
+
 ### Événements émis
 
 | Événement | `detail` | `bubbles` | `composed` | Quand |
@@ -238,6 +364,12 @@ Le lecteur **n’émet pas** aujourd’hui de `CustomEvent` propre vers le docum
 | `wam-loaded` | `{url, name}` | oui | oui | Plugin chargé avec succès |
 | `wam-error` | `{url, error}` | oui | oui | Erreur lors du chargement |
 | `wam-bypass` | `{bypassed}` | oui | oui | Bypass activé/désactivé |
+
+### Événements écoutés
+
+| Source | Événement | Rôle |
+|--------|-----------|------|
+| Champs UI (URL, boutons bypass / GUI / destroy) | `change`, `click` | Chargement de plugin, bypass, affichage GUI |
 
 ### Cycle de vie W3C
 
@@ -305,32 +437,44 @@ document.querySelector('my-audio-player').addEventListener('play-track', (e) => 
 
 ## Graphe audio
 
+### Dans `<my-audio-player>` (`audioplayer.js`)
+
 ```
-<audio> ──► EQ (10 BiquadFilters) ──► [WAM Plugin] ──► GainNode ──► StereoPannerNode ──► AnalyserNode ──► destination
-                                       (optionnel)       (volume)      (balance)          (visualizer)
+MediaElementSource ──► EQ ──► [WAM] ──► GainNode ──► StereoPannerNode ──► AnalyserNode ──► destination
+                              (optionnel)  (volume)     (balance)         (visualiseur + mesure)
 ```
 
-Le graphe est créé **au premier clic play** pour respecter l'autoplay policy du navigateur (l'`AudioContext` ne peut être créé que suite à un geste utilisateur).
+- Le graphe et l’`AudioContext` sont créés **au premier geste de lecture** (autoplay).
+- Sans WAM chargé : sortie de l’EQ → `GainNode`.
+- L’`AnalyserNode` est **après** le panoramique ; le visualiseur et le VU du lecteur s’appuient sur ce nœud.
 
-Si le WAM plugin n'est pas chargé, la sortie de l'EQ est directement connectée au GainNode. Quand un plugin est chargé, il s'insère entre les deux via les nœuds input/output du composant `<wam-plugin>`.
+### Dans `integration-host-app.html` (parcours pédagogique)
+
+Enchaînement **imposé** (texte détaillé sur la page : objectifs pédagogiques, liste ordonnée, encadré « évaluation »). Sur la page hôte, tant que `<my-player-controls>` n’est pas monté, l’indicateur visuel des cartes passe à l’**étape 2** dès qu’au moins une piste est disponible (sinon l’**étape 1** reste mise en avant). Différences notables par rapport à `<my-audio-player>` :
+
+1. **`<my-player-controls>`** est monté **en étape 2** (bouton dédié), ou **au premier clic sur l’étape 3** si l’étape 2 n’a pas été utilisée : l’objectif est que le **contrat événementiel** (`controls-*`) soit branché sur `<audio>` avant ou en même temps que `createMediaElementSource` (volume via `HTMLMediaElement.volume`, balance sans cible tant qu’il n’y a pas de `StereoPannerNode`).
+2. **Étape 3** : création du graphe `MediaElementSource → GainNode (maître) → StereoPanner → destination`, puis bascule du volume / balance vers ces nœuds et `audio.volume = 1`.
+3. **Fin de chaîne** : l’`AnalyserNode` est inséré **sur la queue du signal avant le gain maître** : `… → AnalyserNode → GainNode (maître) → StereoPanner → destination`, ce qui alimente le visualiseur et permet au VU du bloc contrôles (déjà présent) de lire l’analyseur pendant la lecture.
+
+Le fichier **`integration-demo-host.js`** expose un hôte partagé : l’`AudioContext` est créé au **premier** appel de `ensureAudioContext()` (étape 3 du parcours), afin de ne pas perturber la lecture HTML5 seule à l’étape 1. Pas de `new AudioContext` dans le HTML.
 
 ---
 
 ## Intégration dans une autre application audio
 
-Objectif : réutiliser **un seul** composant (EQ, visualiseur, WAM, playlist) dans **votre** page ou **votre** appli qui possède déjà un `AudioContext` et un graphe Web Audio.
+Objectif : réutiliser **un seul** composant (EQ, visualiseur, WAM, playlist, contrôles) dans une page ou une application hôte disposant déjà d’un `AudioContext` et d’un graphe Web Audio.
 
 ### Règles générales
 
-1. **Un seul `AudioContext`** pour tout le graphe. Récupérez celui de l’hôte (`votreApp.audioContext`, etc.) et passez-le aux composants qui exposent `setAudioContext(ctx)` (**EQ**, **WAM**). Ne créez pas un second contexte sauf si vous savez ce que vous faites (pas de lien entre les graphes).
+1. **Un seul `AudioContext`** pour tout le graphe. Récupérer celui de l’hôte (`app.audioContext`, etc.) et le transmettre aux composants qui exposent `setAudioContext(ctx)` (**EQ**, **WAM**). Il convient d’éviter un second contexte sans justification explicite (absence de liaison automatique entre graphes distincts).
 
-2. **Geste utilisateur** : si le contexte hôte est `suspended`, appelez `await ctx.resume()` après une interaction (même contrainte autoplay que le lecteur intégré).
+2. **Geste utilisateur** : si le contexte hôte est `suspended`, appeler `await ctx.resume()` après une interaction (même contrainte autoplay que le lecteur intégré).
 
 3. **Chargement du composant** : une balise `<script type="module" src=".../myequalizer.js">` (ou URL du déploiement), puis le tag HTML correspondant (`<my-equalizer id="eq">`).
 
 ### `<my-equalizer>` — point d’attention (**nœud pont**)
 
-`setInput(node)` reconstruit le graphe EQ et appelle `sourceNode.disconnect()` sur le nœud passé. En Web Audio, **`disconnect()` sans argument enlève toutes les sorties** de ce nœud. Si vous passez directement votre `MediaElementAudioSourceNode`, un oscillateur ou un nœud qui envoie **aussi** vers une autre branche, cette branche est **coupée**.
+`setInput(node)` reconstruit le graphe EQ et appelle `sourceNode.disconnect()` sur le nœud passé. En Web Audio, **`disconnect()` sans argument enlève toutes les sorties** de ce nœud. Si l’on passe directement un `MediaElementAudioSourceNode`, un oscillateur ou un nœud alimentant **également** une autre branche, cette branche est **coupée**.
 
 **Patron recommandé** : insérer un **`GainNode` dédié** (ou tout nœud dont la sortie ne sert **qu’à** l’EQ) :
 
@@ -352,7 +496,7 @@ Schéma : `… → bridgeGain → [EQ] → eq.getOutput() → … → destinatio
 
 ### `<wam-plugin>`
 
-`setInput` fait uniquement `sourceNode.connect(this._inputNode)` : vous pouvez souvent **réutiliser** un nœud qui a déjà d’autres destinations (**fan-out**). Utilisez toujours le **même** `ctx` dans `setAudioContext(ctx)` que le reste du graphe.
+`setInput` fait uniquement `sourceNode.connect(this._inputNode)` : il est souvent possible de **réutiliser** un nœud qui possède déjà d’autres destinations (**fan-out**). Conserver le **même** `ctx` dans `setAudioContext(ctx)` que pour le reste du graphe.
 
 ```js
 wam.setAudioContext(ctx);
@@ -363,7 +507,7 @@ wam.getOutput().connect(nextNode);
 
 ### `<my-visualizer>`
 
-Il ne crée pas de contexte : vous lui donnez un **`AnalyserNode`** déjà branché dans votre chaîne (ou un analyseur en dérivation avec `gain.value = 0` sur une branche écoute, selon votre besoin).
+Il ne crée pas de contexte : il reçoit un **`AnalyserNode`** déjà branché dans la chaîne (ou un analyseur en dérivation avec `gain.value = 0` sur une branche d’écoute, selon le besoin).
 
 ```js
 const analyser = ctx.createAnalyser();
@@ -375,7 +519,7 @@ viz.start();
 
 ### `<my-playlist>`
 
-Pas de Web Audio : **`setTracks([...])`** et écoute de `play-track` / `playlist-changed` pour piloter **votre** moteur (`audio.src`, `AudioBufferSourceNode`, etc.).
+Pas de Web Audio : **`setTracks([...])`** et écoute de `play-track` / `playlist-changed` pour piloter le moteur de lecture (`audio.src`, `AudioBufferSourceNode`, etc.).
 
 ```js
 playlist.setTracks(tracks);
@@ -384,9 +528,22 @@ playlist.addEventListener('play-track', (e) => {
 });
 ```
 
+### Ordre recommandé (référence `integration-host-app.html`)
+
+| Ordre | Contenu | Rôle |
+|------:|---------|------|
+| 1 | `<my-playlist>` + `<audio>` | Données et lecture HTML5 possible sans `MediaElementSource`. |
+| 2 | `<my-player-controls>` | Montage du composant (ou report au clic étape 3) ; événements `controls-*` reliés au média et à la playlist ; volume sur `audio.volume` tant que le graphe Web Audio n’existe pas. |
+| 3 | `createMediaElementSource` + gain maître + panoramique + `destination` | Bouton actif dès qu’il existe des pistes et qu’aucune source n’a été créée ; une source par `<audio>` ; volume / balance pilotent les nœuds Web Audio ; `audio.volume` fixé à 1. |
+| 4 | `<my-equalizer>` | Même `ctx` ; entrée via **pont** `GainNode` (voir ci-dessus). |
+| 5 | `<wam-plugin>` (optionnel) | Avant l’analyseur dans ce parcours ; refus après insertion de l’analyseur (démo linéaire). |
+| 6 | `AnalyserNode` + `<my-visualizer>` | Visualisation ; le VU du bloc contrôles (étape 2) peut refléter le signal via l’analyseur. |
+
 ### Exemple de référence
 
-Voir **`integration-host-app.html`** et **`integration-demo-host.js`** : tutoriel **étape par étape** depuis zéro. L’option A contient un `new AudioContext` dans la page ; l’option B **n’en contient pas** (création dans le module hôte importé). Pistes audio : fichiers locaux (et option `./assets/Kalimba.mp3` via bouton). Chaîne : média natif → `MediaElementSource` → EQ (pont) → WAM → un seul `<my-visualizer>` (spectrum ou waveform via son UI). Recharger la page remet tout à plat (une seule `MediaElementSource` par `<audio>`).
+Fichiers **`integration-host-app.html`** et **`integration-demo-host.js`** : parcours interactif reprenant le tableau ci-dessus ; pistes `assets/` préchargées ; ajout de fichiers locaux possible ; journal affichant le résumé du graphe à chaque étape. L’étape 1 (playlist + média) est initialisée au premier chargement ; un **rechargement** complet sert surtout à réinitialiser le graphe après `createMediaElementSource` (contrainte `MediaElementSource` unique par `<audio>`).
+
+Pour la **démo complète** du lecteur tout-en-un (autre ordre de construction interne), voir **`demo-advanced.html`** et **`index.html`**.
 
 ---
 

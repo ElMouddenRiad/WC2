@@ -1,69 +1,115 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Isolated Playlist Test</title>
-  <script type="module" src="./components/playlist.js"></script>
-  <link rel="stylesheet" href="./css/theme-futuristic.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Isolé — my-playlist</title>
+  <link rel="stylesheet" href="./css/theme-futuristic.css" />
   <style>
+    :root { color-scheme: dark; }
     html, body {
-      width: 100%;
-      height: 100%;
       margin: 0;
-      background: linear-gradient(180deg, #030308, #060a14);
+      min-height: 100%;
+      background: radial-gradient(ellipse 90% 40% at 50% 0%, rgba(0, 60, 100, 0.35), transparent 50%),
+        linear-gradient(180deg, #030308, #060a14);
       color: var(--fx-text);
       font-family: var(--fx-font-ui), system-ui, sans-serif;
     }
     body {
       display: grid;
-      grid-template-rows: auto auto 1fr;
-      gap: 10px;
-      padding: 16px;
+      grid-template-rows: auto auto auto 1fr;
+      gap: 12px;
+      padding: 20px;
       box-sizing: border-box;
-      overflow: hidden;
+      max-width: 640px;
+      margin: 0 auto;
     }
-    my-playlist {
-      display: block;
-      width: min(560px, 100%);
-      height: calc(100vh - 170px);
-      border: 1px solid rgba(0, 240, 255, 0.25);
-      border-radius: 12px;
-      padding: 8px;
-      box-sizing: border-box;
-      background: rgba(8, 16, 36, 0.75);
-      box-shadow: 0 0 24px rgba(0, 240, 255, 0.08);
+    h1 {
+      font-family: var(--fx-font-display), system-ui, sans-serif;
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      color: var(--fx-cyan);
+      margin: 0;
+    }
+    .note {
+      font-size: 12px;
+      color: var(--fx-text-dim);
+      line-height: 1.45;
+    }
+    .add-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+    }
+    .add-row input[type="file"] {
+      font-size: 12px;
     }
     #log {
       font-size: 12px;
-      opacity: 0.85;
+      font-family: ui-monospace, monospace;
+      color: var(--fx-magenta);
+      min-height: 1.2em;
+    }
+    my-playlist {
+      display: block;
+      min-height: 280px;
+      border: 1px solid var(--fx-border);
+      border-radius: var(--fx-radius);
+      padding: 10px;
+      box-sizing: border-box;
+      background: rgba(8, 16, 36, 0.85);
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
     }
   </style>
 </head>
 <body>
-  <h1>Standalone playlist demo</h1>
-  <div id="log">Actions: click track, drag/drop reorder, Delete to remove.</div>
+  <h1>&lt;my-playlist&gt; seul</h1>
+  <p class="note">
+    Aucun Web Audio : la playlist émet seulement des événements (<code>play-track</code>, <code>playlist-changed</code>).
+    L’ajout de fichiers locaux est géré par la <strong>page hôte</strong> (comme dans le lecteur complet : zone « Files… » au-dessus du tag) — ce n’est pas une méthode interne du composant.
+  </p>
+  <div class="add-row">
+    <label>
+      <input type="file" id="filePick" accept="audio/*" multiple />
+      Ajouter des fichiers (hôte → <code>addTrack</code>)
+    </label>
+  </div>
+  <div id="log"></div>
   <my-playlist id="playlist"></my-playlist>
 
-  <script>
+  <script type="module">
+    import './components/playlist.js';
+
     const playlist = document.getElementById('playlist');
     const log = document.getElementById('log');
+    const filePick = document.getElementById('filePick');
 
     playlist.setTracks([
-      { src: './assets/Kalimba.mp3', title: 'Kalimba', duration: 119 },
+      { src: './assets/Kalimba.mp3', title: 'Kalimba' },
       { src: './assets/Boney M. - Sunny (Official Audio).mp3', title: 'Boney M. - Sunny' },
       { src: './assets/Chic ~ I Want Your Love 1978 Disco Purrfection Version.mp3', title: 'Chic - I Want Your Love' },
       { src: './assets/Dire Straits - Tunnel Of Love.mp3', title: 'Dire Straits - Tunnel Of Love' },
       { src: './assets/Fat Larry s Band - Act Like You Know.mp3', title: 'Fat Larry s Band - Act Like You Know' },
-      { src: './assets/Natural Mystic (1977) - Bob Marley The Wailers.mp3', title: 'Bob Marley - Natural Mystic' }
+      { src: './assets/Natural Mystic (1977) - Bob Marley The Wailers.mp3', title: 'Bob Marley - Natural Mystic' },
     ]);
 
-    playlist.addEventListener('play-track', (e) => {
-      log.textContent = `play-track: index ${e.detail.index}`;
+    filePick.addEventListener('change', () => {
+      const files = [...(filePick.files || [])];
+      filePick.value = '';
+      for (const f of files) {
+        if (!f.type.startsWith('audio/')) continue;
+        playlist.addTrack({ src: URL.createObjectURL(f), title: f.name });
+      }
     });
 
+    playlist.addEventListener('play-track', (e) => {
+      log.textContent = `play-track → index ${e.detail.index}`;
+    });
     playlist.addEventListener('playlist-changed', (e) => {
-      log.textContent = `playlist-changed: ${JSON.stringify(e.detail)}`;
+      log.textContent = `playlist-changed → ${JSON.stringify(e.detail)}`;
     });
   </script>
 </body>

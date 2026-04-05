@@ -1,70 +1,97 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Isolated Visualizer Test</title>
-  <script type="module" src="./components/myvisualizer.js"></script>
-  <link rel="stylesheet" href="./css/theme-futuristic.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Isolé — my-visualizer</title>
+  <link rel="stylesheet" href="./css/theme-futuristic.css" />
   <style>
+    :root { color-scheme: dark; }
     html, body {
-      width: 100%;
-      height: 100%;
       margin: 0;
-      background: linear-gradient(180deg, #030308, #060a14);
+      min-height: 100%;
+      background: radial-gradient(ellipse 90% 40% at 50% 0%, rgba(0, 60, 100, 0.35), transparent 50%),
+        linear-gradient(180deg, #030308, #060a14);
       color: var(--fx-text);
       font-family: var(--fx-font-ui), system-ui, sans-serif;
     }
     body {
       display: grid;
-      grid-template-rows: auto auto 1fr;
-      gap: 10px;
-      padding: 16px;
+      grid-template-rows: auto auto auto 1fr;
+      gap: 12px;
+      padding: 20px;
       box-sizing: border-box;
-      overflow: hidden;
+      max-width: 900px;
+      margin: 0 auto;
     }
+    h1 {
+      font-family: var(--fx-font-display), system-ui, sans-serif;
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      color: var(--fx-cyan);
+      margin: 0;
+    }
+    .note { font-size: 12px; color: var(--fx-text-dim); line-height: 1.45; }
+    button {
+      justify-self: start;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-family: var(--fx-font-ui), sans-serif;
+      font-weight: 600;
+      font-size: 13px;
+      background: var(--fx-surface-2);
+      color: var(--fx-text);
+      border: 1px solid var(--fx-border);
+      cursor: pointer;
+    }
+    button:hover { border-color: var(--fx-border-strong); box-shadow: var(--fx-glow-cyan); }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
     my-visualizer {
       display: block;
-      width: min(1000px, 100%);
-      border: 1px solid rgba(0, 240, 255, 0.25);
-      border-radius: 12px;
+      min-height: 200px;
+      border: 1px solid var(--fx-border);
+      border-radius: var(--fx-radius);
       padding: 10px;
       box-sizing: border-box;
-      background: rgba(8, 16, 36, 0.75);
-      box-shadow: 0 0 24px rgba(0, 240, 255, 0.08);
+      background: rgba(8, 16, 36, 0.85);
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
     }
   </style>
 </head>
 <body>
-  <h1>Standalone visualizer demo</h1>
-  <p>Click once to initialize audio, then use Start/Stop inside the component.</p>
-  <my-visualizer id="viz"></my-visualizer>
+  <h1>&lt;my-visualizer&gt; seul</h1>
+  <p class="note">Oscillateur + analyseur dans la page ; le composant reçoit l’analyseur via <code>setAnalyser</code>.</p>
+  <button type="button" id="startBtn">Démarrer</button>
+  <my-visualizer id="viz" mode="spectrum" compact></my-visualizer>
 
-  <script>
-    document.body.addEventListener('click', async () => {
-      const viz = document.getElementById('viz');
-      if (!viz || viz.__initialized) return;
+  <script type="module">
+    import './components/myvisualizer.js';
+
+    const viz = document.getElementById('viz');
+    const startBtn = document.getElementById('startBtn');
+
+    startBtn.addEventListener('click', async () => {
+      if (viz.__initialized) return;
       viz.__initialized = true;
+      startBtn.disabled = true;
 
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      await ctx.resume();
       const osc = ctx.createOscillator();
       osc.type = 'sawtooth';
       osc.frequency.value = 220;
-
       const gain = ctx.createGain();
       gain.gain.value = 0.03;
-
       const analyser = ctx.createAnalyser();
       analyser.fftSize = 2048;
-
       osc.connect(gain);
       gain.connect(analyser);
       analyser.connect(ctx.destination);
-
       viz.setAnalyser(analyser);
       osc.start();
       viz.start();
-    }, { once: true });
+    });
   </script>
 </body>
 </html>

@@ -1,79 +1,112 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Isolated WAM Plugin Test</title>
-  <script type="module" src="./components/wamplugin.js"></script>
-  <link rel="stylesheet" href="./css/theme-futuristic.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Isolé — wam-plugin</title>
+  <link rel="stylesheet" href="./css/theme-futuristic.css" />
   <style>
-    html, body {
-      width: 100%; height: 100%;
-      margin: 0;
-      background: linear-gradient(180deg, #030308, #060a14);
-      color: var(--fx-text);
-      font-family: var(--fx-font-ui), system-ui, sans-serif;
-    }
+    :root { color-scheme: dark; }
     body {
+      margin: 0;
+      min-height: 100%;
       padding: 20px;
       box-sizing: border-box;
+      background: radial-gradient(ellipse 90% 40% at 50% 0%, rgba(0, 60, 100, 0.35), transparent 50%),
+        linear-gradient(180deg, #030308, #060a14);
+      color: var(--fx-text);
+      font-family: var(--fx-font-ui), system-ui, sans-serif;
+      max-width: 720px;
+      margin-inline: auto;
     }
+    h1 {
+      font-family: var(--fx-font-display), system-ui, sans-serif;
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      color: var(--fx-cyan);
+    }
+    .note { font-size: 12px; color: var(--fx-text-dim); margin: 8px 0 14px; line-height: 1.45; }
+    .note a { color: var(--fx-cyan); }
+    button {
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-family: var(--fx-font-ui), sans-serif;
+      font-weight: 600;
+      font-size: 13px;
+      background: var(--fx-surface-2);
+      color: var(--fx-text);
+      border: 1px solid var(--fx-border);
+      cursor: pointer;
+      margin-right: 8px;
+      margin-bottom: 8px;
+    }
+    button:hover { border-color: var(--fx-border-strong); box-shadow: var(--fx-glow-cyan); }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
     wam-plugin {
       display: block;
-      width: min(700px, 100%);
-      border: 1px solid rgba(0, 240, 255, 0.25);
-      border-radius: 12px;
-      padding: 12px;
-      background: rgba(8, 16, 36, 0.75);
       margin-top: 16px;
-      box-shadow: 0 0 24px rgba(0, 240, 255, 0.08);
+      border: 1px solid var(--fx-border);
+      border-radius: var(--fx-radius);
+      padding: 12px;
+      background: rgba(8, 16, 36, 0.85);
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
     }
-    #log { font-size: 12px; opacity: 0.8; margin-top: 10px; }
-    button { padding: 8px 14px; border-radius: 8px; background: rgba(255,255,255,0.08); color: #eaeaea; border: 1px solid rgba(255,255,255,0.15); cursor: pointer; }
-    button:hover { background: rgba(255,255,255,0.15); }
-    .help { font-size: 12px; opacity: 0.7; margin-top: 10px; }
+    #log {
+      font-size: 12px;
+      font-family: ui-monospace, monospace;
+      color: var(--fx-magenta);
+      margin-top: 12px;
+      min-height: 1.2em;
+    }
   </style>
 </head>
 <body>
-  <h1>Standalone WAM Plugin Demo</h1>
-  <p>Click "Start Audio" to initialize an oscillator, then load a WAM plugin URL.</p>
-  <button id="startBtn">Start Audio</button>
-  <div class="help">
-    Try a WAM plugin URL from the <a href="https://www.webaudiomodules.com/docs/community" target="_blank" style="color:#9ad5ff">WAM Gallery</a>
-  </div>
-  <wam-plugin id="wam" name="WAM Effect"></wam-plugin>
+  <h1>&lt;wam-plugin&gt; seul</h1>
+  <p class="note">
+    <strong>Démarrer l’audio</strong> crée un <code>AudioContext</code>, un oscillateur de test et appelle <code>wam.setAudioContext</code>, <code>setInput</code> et le branchement vers la sortie — condition pour que le WAM soit dans le graphe.
+    Ensuite utilisez le champ URL et le bouton <strong>Load</strong> du composant (même flux que les autres pages du projet) : <code>loadPlugin</code> exige un contexte déjà injecté.
+    Galerie : <a href="https://www.webaudiomodules.com/docs/community" target="_blank" rel="noopener">WebAudioModules</a>.
+  </p>
+  <button type="button" id="startBtn">Démarrer l’audio</button>
+  <wam-plugin id="wam" name="WAM"></wam-plugin>
   <div id="log"></div>
 
-  <script>
+  <script type="module">
+    import './components/wamplugin.js';
+
     const wam = document.getElementById('wam');
     const log = document.getElementById('log');
+    const startBtn = document.getElementById('startBtn');
 
     wam.addEventListener('wam-loaded', (e) => {
-      log.textContent = `WAM loaded: ${e.detail.name || e.detail.url}`;
+      log.textContent = `wam-loaded : ${e.detail.name || e.detail.url || ''}`;
     });
     wam.addEventListener('wam-error', (e) => {
-      log.textContent = `WAM error: ${e.detail.error}`;
+      log.textContent = `wam-error : ${e.detail.error}`;
     });
     wam.addEventListener('wam-bypass', (e) => {
-      log.textContent = `WAM bypass: ${e.detail.bypassed}`;
+      log.textContent = `wam-bypass : ${e.detail.bypassed}`;
     });
 
-    document.getElementById('startBtn').addEventListener('click', async () => {
+    startBtn.addEventListener('click', async () => {
+      if (wam.__started) return;
+      wam.__started = true;
+      startBtn.disabled = true;
+
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      await ctx.resume();
       const osc = ctx.createOscillator();
       osc.type = 'sawtooth';
       osc.frequency.value = 220;
-
       const gain = ctx.createGain();
       gain.gain.value = 0.05;
-
       wam.setAudioContext(ctx);
       osc.connect(gain);
       wam.setInput(gain);
       wam.getOutput().connect(ctx.destination);
-
       osc.start();
-      log.textContent = 'Audio started — oscillator 220 Hz sawtooth';
+      log.textContent = 'Oscillateur 220 Hz → WAM (bypass) → sortie — chargez un plugin via Load dans le bloc ci-dessous.';
     });
   </script>
 </body>

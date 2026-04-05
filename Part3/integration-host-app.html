@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Intégration progressive — contexte au choix & composants réutilisables</title>
+  <title>Partie 3 — Parcours d’intégration Web Audio</title>
+  <script type="module" src="./components/playercontrols.js"></script>
   <script type="module" src="./components/myequalizer.js"></script>
   <script type="module" src="./components/myvisualizer.js"></script>
   <script type="module" src="./components/wamplugin.js"></script>
@@ -16,152 +17,217 @@
       background: radial-gradient(ellipse 90% 50% at 50% -5%, rgba(0, 60, 100, 0.35), transparent 55%),
         linear-gradient(180deg, #030308 0%, #060a14 100%);
       color: var(--fx-text);
-      padding: 16px 20px 48px;
-      max-width: 760px;
+      padding: 20px 22px 40px;
+      max-width: 800px;
       margin: 0 auto;
-      line-height: 1.45;
+      line-height: 1.55;
     }
     h1 {
       font-family: var(--fx-font-display), system-ui, sans-serif;
-      font-size: 1.25rem;
+      font-size: 1.2rem;
       font-weight: 700;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.05em;
       background: linear-gradient(90deg, var(--fx-cyan), var(--fx-magenta));
       -webkit-background-clip: text;
       background-clip: text;
       -webkit-text-fill-color: transparent;
     }
-    code { background: rgba(0, 240, 255, 0.08); padding: 2px 6px; border-radius: 4px; font-size: 0.88em; border: 1px solid var(--fx-border); color: var(--fx-cyan); }
-    .lead { font-size: 0.95rem; opacity: 0.92; margin: 12px 0 20px; }
-    .idea {
-      font-size: 0.88rem; opacity: 0.9;
-      border-left: 3px solid var(--fx-cyan);
-      padding: 8px 0 8px 12px; margin: 8px 0 14px;
-      background: rgba(0, 240, 255, 0.06);
-      border-radius: 0 8px 8px 0;
+    .intro {
+      font-size: 0.9rem;
+      opacity: 0.92;
+      margin: 12px 0 10px;
     }
-    .diff {
-      font-family: ui-monospace, monospace; font-size: 11px; line-height: 1.45;
-      background: rgba(4, 12, 32, 0.85); padding: 10px 12px; border-radius: 8px;
-      border: 1px solid var(--fx-border); margin: 10px 0 6px; overflow-x: auto; color: #a8e8f0;
-      box-shadow: inset 0 0 24px rgba(0, 240, 255, 0.04);
+    .intro strong { color: var(--fx-text); }
+    .doc-block {
+      font-size: 12px;
+      color: var(--fx-text-dim);
+      line-height: 1.5;
+      margin: 10px 0 14px;
+      padding: 12px 14px;
+      border: 1px solid var(--fx-border);
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.2);
     }
-    .diff strong { color: var(--fx-cyan); display: block; margin-bottom: 6px; font-family: var(--fx-font-ui), sans-serif; font-size: 12px; }
+    .doc-block ul { margin: 8px 0 0 1.1rem; padding: 0; }
+    .doc-block li { margin: 4px 0; }
+    code {
+      background: rgba(0, 240, 255, 0.08);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.86em;
+      border: 1px solid var(--fx-border);
+      color: var(--fx-cyan);
+    }
+    nav.route {
+      border: 1px solid var(--fx-border);
+      border-radius: 12px;
+      padding: 12px 14px 12px 12px;
+      margin-bottom: 18px;
+      background: rgba(0, 0, 0, 0.22);
+    }
+    nav.route .route-title {
+      font-family: var(--fx-font-display);
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--fx-text-dim);
+      margin: 0 0 8px 4px;
+    }
+    nav.route ol {
+      margin: 0;
+      padding-left: 1.35rem;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    nav.route li { margin: 5px 0; }
+    nav.route li strong { color: var(--fx-cyan); font-weight: 600; }
     .step {
       border: 1px solid var(--fx-border);
-      border-radius: 12px; padding: 14px 16px 16px; margin-bottom: 14px;
+      border-radius: 12px;
+      padding: 14px 16px 16px;
+      margin-bottom: 12px;
       background: var(--fx-surface);
       backdrop-filter: blur(8px);
       box-shadow: 0 4px 24px rgba(0,0,0,0.35);
     }
-    .step h2 { margin: 0 0 8px; font-size: 1rem; font-weight: 600; color: var(--fx-text); font-family: var(--fx-font-display); letter-spacing: 0.04em; }
-    .step.pending { opacity: 0.45; }
+    .step h2 {
+      margin: 0 0 6px;
+      font-size: 0.98rem;
+      font-weight: 600;
+      color: var(--fx-text);
+      font-family: var(--fx-font-display);
+      letter-spacing: 0.03em;
+    }
+    .step-why {
+      font-size: 12px;
+      color: var(--fx-text-dim);
+      line-height: 1.5;
+      margin: 0 0 10px;
+      border-left: 2px solid rgba(0, 240, 255, 0.35);
+      padding-left: 10px;
+    }
+    .step.pending { opacity: 0.42; }
     .step.pending h2 { color: var(--fx-text-dim); }
     .step.current { border-color: var(--fx-border-strong); box-shadow: var(--fx-glow-cyan); }
     .step.done { border-color: rgba(0, 240, 255, 0.35); }
-    .step.done h2::after { content: " ✓"; color: var(--fx-cyan); font-weight: 700; text-shadow: 0 0 8px rgba(0,240,255,0.5); }
+    .step.done h2::after { content: " ✓"; color: var(--fx-cyan); font-weight: 700; }
     button {
-      display: inline-block; padding: 8px 14px; border-radius: 8px; cursor: pointer;
-      font-family: var(--fx-font-ui), sans-serif; font-weight: 600; letter-spacing: 0.04em;
-      background: var(--fx-surface-2); color: var(--fx-text); border: 1px solid var(--fx-border);
-      font-size: 13px; margin: 4px 8px 4px 0;
+      display: inline-block;
+      padding: 8px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: var(--fx-font-ui), system-ui, sans-serif;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      background: var(--fx-surface-2);
+      color: var(--fx-text);
+      border: 1px solid var(--fx-border);
+      font-size: 13px;
+      margin: 4px 8px 4px 0;
       transition: box-shadow 0.15s, border-color 0.15s;
     }
     button:hover:not(:disabled) { border-color: var(--fx-border-strong); box-shadow: var(--fx-glow-cyan); }
     button:disabled { opacity: 0.35; cursor: not-allowed; }
     button.ghost { background: rgba(0,0,0,0.35); }
-    .row { margin-top: 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .row { margin-top: 8px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
     audio { width: 100%; margin-top: 10px; max-height: 40px; border-radius: 8px; }
     #chainLog {
-      font-family: ui-monospace, monospace; font-size: 11px; line-height: 1.55; white-space: pre-wrap;
-      background: rgba(4, 8, 24, 0.9); padding: 12px; border-radius: 8px;
-      border: 1px solid var(--fx-border); color: var(--fx-cyan);
-      margin-top: 20px; min-height: 3em;
-      box-shadow: inset 0 0 32px rgba(0, 240, 255, 0.06);
+      font-family: ui-monospace, monospace;
+      font-size: 11px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      background: rgba(4, 8, 24, 0.9);
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--fx-border);
+      color: var(--fx-cyan);
+      margin-top: 18px;
+      min-height: 2.5em;
     }
-    my-equalizer, my-visualizer, wam-plugin, my-playlist { display: block; margin-top: 10px; }
-    a.reload { color: var(--fx-cyan); font-size: 13px; }
-    .file-hint { font-size: 12px; color: var(--fx-text-dim); margin-top: 8px; }
+    my-equalizer, my-visualizer, wam-plugin, my-playlist, my-player-controls { display: block; margin-top: 10px; }
+    .meta { font-size: 12px; color: var(--fx-text-dim); margin-bottom: 14px; }
+    .meta a { color: var(--fx-cyan); }
   </style>
 </head>
 <body>
-  <h1>Du zéro à la chaîne — composants utilisables dans n’importe quel contexte</h1>
-  <p class="lead">
-    Les composants ne créent pas votre monde audio à votre place : <strong>vous</strong> fournissez le
-    <code>AudioContext</code> (le vôtre, celui d’un framework, d’un onglet partagé, d’un module chargé à part…),
-    puis <code>setAudioContext</code> / <code>setInput</code> / <code>setAnalyser</code>. Ils restent de simples
-    <code>HTMLElement</code> branchés sur <strong>votre</strong> graphe.
-  </p>
-  <p class="idea">
-    <strong>Un flux = un même <code>AudioContext</code>.</strong> Ce n’est pas une limite des Web Components :
-    c’est la façon dont la Web Audio API relie les nœuds. L’« indépendance », ici, veut dire :
-    <em>aucune dépendance à notre lecteur</em> — import du seul fichier du composant, puis API explicite —
-    et <em>libre choix de l’origine du contexte</em> (voir étape 0).
+  <h1>Parcours d’intégration Web Audio (composants réutilisables)</h1>
+
+  <p class="intro">
+    Ce document présente une <strong>démonstration guidée</strong> : enchaînement, dans une page hôte, des mêmes briques que le lecteur complet
+    (<code>&lt;my-audio-player&gt;</code>), avec branchement <strong>manuel</strong> sur un graphe Web Audio dont l’état se construit à chaque étape.
+    L’<code>AudioContext</code> n’est <strong>pas</strong> créé à l’étape 1 : il est obtenu via <code>integration-demo-host.js</code> au <strong>premier branchement Web Audio</strong> (étape 3), pour laisser la lecture HTML5 native fonctionner sans contrainte CORS inutile. Pas de <code>new AudioContext</code> dans le HTML.
   </p>
 
-  <p style="margin-bottom:16px;font-size:13px;">
-    <a class="reload" href="./integration-host-app.html">Recharger la page</a> pour tout remettre à zéro (un seul
-    <code>MediaElementSource</code> par <code>&lt;audio&gt;</code>).
-  </p>
-
-  <!-- Étape 0 -->
-  <div class="step current" id="s0">
-    <h2>Étape 0 — D’où vient le AudioContext ? (ce n’est pas la même chose en code)</h2>
-    <p style="font-size:13px;margin:0 0 8px;opacity:.9;">
-      Les deux boutons aboutissent au même <em>type</em> d’objet (<code>AudioContext</code>), mais pas au même
-      <em>rôle</em> dans votre architecture :
-    </p>
-    <div class="diff">
-      <strong>Option A — Votre page est le propriétaire du contexte</strong>
-      <span>Le script de cette page appelle explicitement <code>new AudioContext()</code>. Typique d’une appli qui contrôle tout le son.</span>
-    </div>
-    <div class="diff">
-      <strong>Option B — Le contexte est créé ailleurs (module « hôte »)</strong>
-      <span><strong>Ce fichier ne contient aucun <code>new AudioContext</code>.</strong> Il importe
-      <code>integration-demo-host.js</code>, qui simule une autre couche (bundle tiers, worker loader, autre équipe…).
-      La page ne fait qu’obtenir une référence : même objet Web Audio, mais contrat d’intégration différent — comme dans une vraie appli modulaire.</span>
-    </div>
-    <div class="row">
-      <button type="button" id="btnCtxSolo">A — Créer le contexte dans cette page</button>
-      <button type="button" id="btnCtxHost">B — Contexte depuis le module hôte (fichier séparé)</button>
-    </div>
+  <div class="doc-block">
+    <strong style="color:var(--fx-text);font-size:12px;">Éléments attendus pour l’évaluation</strong>
+    <ul>
+      <li><strong>Un seul</strong> <code>AudioContext</code> pour toute la chaîne ; il est passé aux composants via <code>setAudioContext(ctx)</code> lorsque la spécification du composant l’exige (EQ, WAM).</li>
+      <li>La playlist et le composant <code>&lt;my-player-controls&gt;</code> ne créent <strong>pas</strong> de nœuds Web Audio : ils émettent des événements ou reçoivent des branchements que le <strong>script hôte</strong> relie au média et aux <code>GainNode</code> / <code>StereoPannerNode</code>.</li>
+      <li>L’ordre des étapes ci-dessous est la <strong>séquence pédagogique</strong> attendue : contrôle (contrat <code>controls-*</code>), entrée Web Audio, traitement (EQ, WAM optionnel), mesure (analyseur + visualiseur). Si l’étape 2 n’est pas cliquée, le montage de <code>&lt;my-player-controls&gt;</code> se fait au premier clic sur l’étape 3. Le VU du bloc contrôles ne reflète le signal qu’après l’étape analyseur.</li>
+      <li>Pour réinitialiser la démonstration, un rechargement de la page est requis : le navigateur n’autorise qu’<strong>une</strong> <code>MediaElementAudioSourceNode</code> par élément <code>&lt;audio&gt;</code>.</li>
+    </ul>
   </div>
 
-  <!-- Étape 1 -->
-  <div class="step pending" id="s1">
-    <h2>Étape 1 — Média de test (fichiers locaux uniquement)</h2>
-    <p style="font-size:13px;margin:0 0 6px;opacity:.9;">
-      Aucune piste distante imposée : ajoutez un ou plusieurs fichiers audio. Lecture HTML5 classique tant que le graphe Web Audio n’est pas branché.
+  <nav class="route" aria-label="Ordre des étapes">
+    <p class="route-title">Ordre à suivre (numérotation affichée sur chaque carte)</p>
+    <ol>
+      <li><strong>Playlist + &lt;audio&gt;</strong> — Source de vérité des pistes ; lecture HTML5 possible avant toute connexion Web Audio.</li>
+      <li><strong>&lt;my-player-controls&gt;</strong> — Montage du composant et abonnement aux événements <code>controls-*</code> ; volume sur <code>HTMLMediaElement.volume</code> tant que le graphe n’est pas branché ; balance sans effet jusqu’à l’existence d’un <code>StereoPannerNode</code>. Le même montage peut être déclenché automatiquement au clic sur l’étape 3 si l’étape 2 n’a pas encore été validée.</li>
+      <li><strong>MediaElementSource → gain maître → panoramique → destination</strong> — À partir d’ici, le volume et la balance du bloc contrôles pilotent les nœuds Web Audio ; <code>audio.volume</code> est fixé à 1 pour éviter une double atténuation.</li>
+      <li><strong>&lt;my-equalizer&gt;</strong> — Insertion avec le pont <code>GainNode</code> recommandé dans la SPECIFICATION (éviter de passer le <code>MediaElementSource</code> directement à <code>setInput</code> si d’autres branches existent).</li>
+      <li><strong>&lt;wam-plugin&gt;</strong> (facultatif) — Avant l’analyseur dans ce scénario ; après analyseur, ce parcours linéaire refuse l’insertion WAM.</li>
+      <li><strong>Analyseur + &lt;my-visualizer&gt;</strong> — L’analyseur est placé sur la queue du signal avant le gain maître dans cette démo ; le VU du bloc contrôles lit ensuite ce nœud.</li>
+    </ol>
+  </nav>
+
+  <p class="meta">Dès qu’au moins une piste est présente, l’<strong>indicateur d’étapes</strong> avance sur la carte « Étape 2 » (avant le montage de <code>&lt;my-player-controls&gt;</code>). L’<strong>étape 1</strong> (playlist + média) est prête dès l’ouverture avec les pistes par défaut. Utilisez <a href="./integration-host-app.html">Recharger la page</a> seulement pour <strong>réinitialiser tout le graphe Web Audio</strong> après <code>createMediaElementSource</code> (une seule source par balise <code>audio</code>). Documentation : <a href="./SPECIFICATION.md">SPECIFICATION.md</a> et <a href="./README.md">README.md</a>.</p>
+
+  <div class="step current" id="s0">
+    <h2>Étape 1 — Playlist et élément média</h2>
+    <p class="step-why">
+      <code>&lt;my-playlist&gt;</code> tient la liste et notifie les changements. L’élément <code>&lt;audio&gt;</code> est le média réel : tant qu’aucun
+      <code>MediaElementAudioSourceNode</code> n’a été créé, le son sort par la sortie « native » du navigateur. Les pistes par défaut viennent de l’attribut <code>data-tracks</code> sur la playlist <em>et</em> du script hôte ; ouvrez la page via un serveur HTTP local (<code>npx http-server</code>) pour que les fichiers sous <code>assets/</code> se chargent. Pas d’attribut <code>crossorigin</code> sur <code>audio</code> à l’étape 1 (évite un blocage si le serveur n’envoie pas d’en-têtes CORS).
     </p>
     <div class="row">
       <label style="font-size:13px;">
         <input type="file" id="filePick" accept="audio/*" multiple />
-        Choisir des fichiers
+        Ajouter des fichiers audio
       </label>
-      <button type="button" class="ghost" id="btnTryAsset" title="Nécessite un fichier présent et http-server">+ exemple <code>assets/Kalimba.mp3</code></button>
     </div>
-    <p class="file-hint">Sans fichier, l’étape 2 reste désactivée. Le bouton « Kalimba » ajoute
-      <code>./assets/Kalimba.mp3</code> à la playlist (réussi seulement si le fichier existe à cet emplacement).</p>
-    <my-playlist id="pl"></my-playlist>
-    <audio id="media" controls preload="metadata" crossorigin="anonymous"></audio>
+    <my-playlist id="pl" data-tracks='[{"src":"./assets/Kalimba.mp3","title":"Kalimba"},{"src":"./assets/Boney M. - Sunny (Official Audio).mp3","title":"Boney M. - Sunny"},{"src":"./assets/Chic ~ I Want Your Love 1978 Disco Purrfection Version.mp3","title":"Chic - I Want Your Love"},{"src":"./assets/Dire Straits - Tunnel Of Love.mp3","title":"Dire Straits - Tunnel Of Love"},{"src":"./assets/Fat Larry s Band - Act Like You Know.mp3","title":"Fat Larry s Band - Act Like You Know"},{"src":"./assets/Natural Mystic (1977) - Bob Marley The Wailers.mp3","title":"Bob Marley - Natural Mystic"}]'></my-playlist>
+    <audio id="media" controls preload="metadata"></audio>
   </div>
 
-  <!-- Étape 2 -->
-  <div class="step pending" id="s2">
-    <h2>Étape 2 — Entrer dans Web Audio (<code>MediaElementSource</code>)</h2>
-    <p style="font-size:13px;margin:0 0 8px;opacity:.9;">
-      Connexion de l’élément au contexte choisi en A ou B, puis gain maître → sortie.
+  <div class="step pending" id="s1">
+    <h2>Étape 2 — <code>&lt;my-player-controls&gt;</code></h2>
+    <p class="step-why">
+      Le composant est défini dans <code>playercontrols.js</code> et importe localement <code>webaudiocontrols.js</code> pour le knob (consigne cours : pas de script webaudio-controls dans le HTML).
+      Il s’agit de monter le tag, puis d’écouter les événements composés (<code>controls-play</code>, <code>controls-volume</code>, etc.) pour les relier à <code>audio</code> et à la playlist.
+      Tant que l’étape 3 n’est pas effectuée, le volume agit sur <code>audio.volume</code> ; la balance n’a pas encore de cible dans le graphe.
+      Le bouton de l’<strong>étape 3</strong> s’active dès qu’il y a au moins une piste et qu’aucun <code>MediaElementSource</code> n’a été créé : si vous n’avez pas cliqué ici, le montage de <code>&lt;my-player-controls&gt;</code> et le branchement des événements se font au premier clic sur « Brancher le média au graphe ».
     </p>
     <div class="row">
-      <button type="button" id="btnWebAudioPath" disabled>Brancher media → gain → sortie</button>
+      <button type="button" id="btnControls" disabled>Monter le composant et brancher les événements</button>
+    </div>
+    <div id="controlsMount" style="display:none"></div>
+  </div>
+
+  <div class="step pending" id="s2">
+    <h2>Étape 3 — Entrée dans Web Audio</h2>
+    <p class="step-why">
+      <code>createMediaElementSource</code> attache définitivement ce graphe à cette balise <code>audio</code>. On crée un <code>GainNode</code> (volume maître) et un <code>StereoPannerNode</code> (balance), puis on relie au <code>destination</code> du contexte.
+      Les valeurs affichées sur le bloc contrôles sont recopiées sur ces nœuds ; <code>audio.volume</code> est ramené à 1 pour que seul le gain Web Audio contrôle le niveau.
+    </p>
+    <p style="font-size:12px;margin:0 0 8px;opacity:.85;">Schéma après clic : <code>MediaElementSource → GainNode → StereoPanner → destination</code>.</p>
+    <div class="row">
+      <button type="button" id="btnWebAudioPath" disabled>Brancher le média au graphe</button>
     </div>
   </div>
 
-  <!-- Étape 3 -->
   <div class="step pending" id="s3">
-    <h2>Étape 3 — <code>&lt;my-equalizer&gt;</code></h2>
-    <p style="font-size:13px;margin:0 0 8px;opacity:.9;">
-      Pont <code>GainNode</code> + <code>setAudioContext(ctx)</code> — même <code>ctx</code> qu’aux étapes précédentes.
+    <h2>Étape 4 — <code>&lt;my-equalizer&gt;</code></h2>
+    <p class="step-why">
+      L’égaliseur reçoit le même <code>AudioContext</code>. Le média est déconnecté du gain maître, passé dans un <code>GainNode</code> pont, puis <code>setInput</code> / <code>getOutput</code> selon l’API du composant. La sortie de l’EQ revient vers le gain maître déjà relié au panoramique et à la sortie.
     </p>
     <div class="row">
       <button type="button" id="btnEq" disabled>Insérer l’égaliseur</button>
@@ -169,67 +235,102 @@
     <my-equalizer id="extEq" compact style="display:none"></my-equalizer>
   </div>
 
-  <!-- Étape 4 -->
   <div class="step pending" id="s4">
-    <h2>Étape 4 — <code>&lt;wam-plugin&gt;</code> (optionnel)</h2>
+    <h2>Étape 5 — <code>&lt;wam-plugin&gt;</code> (optionnel)</h2>
+    <p class="step-why">
+      Un effet WAM peut être inséré entre la sortie de l’EQ et le gain maître. Si l’étape 6 est enclenchée sans étape 5, cette branche est considérée comme sautée une fois le visualiseur actif.
+      Après insertion de l’analyseur, ce scénario linéaire n’autorise plus l’ajout du WAM sans rechargement de la page.
+    </p>
     <div class="row">
       <button type="button" id="btnWam" disabled>Insérer le conteneur WAM</button>
-      <button type="button" class="ghost" id="btnWamLoad" disabled>Charger effet WAM (réseau)</button>
+      <button type="button" class="ghost" id="btnWamLoad" disabled>Charger un effet (réseau)</button>
     </div>
     <wam-plugin id="extWam" name="WAM" style="display:none"></wam-plugin>
   </div>
 
-  <!-- Étape 5 -->
   <div class="step pending" id="s5">
-    <h2>Étape 5 — <code>&lt;my-visualizer&gt;</code> (spectrum / waveform dans le même composant)</h2>
-    <p style="font-size:13px;margin:0 0 8px;opacity:.9;">
-      Un analyseur dans votre graphe ; le composant propose le mode dans son propre sélecteur — pas de second composant.
+    <h2>Étape 6 — Analyseur et <code>&lt;my-visualizer&gt;</code></h2>
+    <p class="step-why">
+      Un <code>AnalyserNode</code> est inséré sur la queue courante avant le <code>GainNode</code> maître dans ce montage pédagogique. <code>setAnalyser</code> + <code>start()</code> sur le visualiseur affichent le spectre ou la forme d’onde.
+      Le VU du bloc contrôles (étape 2) peut alors être alimenté par des échantillons temporels issus de ce même analyseur lorsque la lecture est active.
     </p>
     <div class="row">
-      <button type="button" id="btnViz" disabled>Insérer Analyser + visualiseur</button>
+      <button type="button" id="btnViz" disabled>Insérer l’analyseur et le visualiseur</button>
     </div>
     <my-visualizer id="extViz" mode="spectrum" compact style="display:none;margin-top:10px"></my-visualizer>
   </div>
 
-  <div id="chainLog">Journal : choisissez A ou B, puis ajoutez au moins un fichier audio.</div>
+  <div id="chainLog">Préparation du parcours…</div>
 
   <script type="module">
+    import './components/playlist.js';
     import { demoAudioHost } from './integration-demo-host.js';
 
     const WAM_URL =
       'https://www.webaudiomodules.com/community/plugins/wimmics/graphicEqualizer/index.js';
 
-    const ASSET_TRY = { src: './assets/Kalimba.mp3', title: 'Kalimba (assets/)' };
+    const DEFAULT_TRACKS = [
+      { src: './assets/Kalimba.mp3', title: 'Kalimba' },
+      { src: './assets/Boney M. - Sunny (Official Audio).mp3', title: 'Boney M. - Sunny' },
+      { src: './assets/Chic ~ I Want Your Love 1978 Disco Purrfection Version.mp3', title: 'Chic - I Want Your Love' },
+      { src: './assets/Dire Straits - Tunnel Of Love.mp3', title: 'Dire Straits - Tunnel Of Love' },
+      { src: './assets/Fat Larry s Band - Act Like You Know.mp3', title: 'Fat Larry s Band - Act Like You Know' },
+      { src: './assets/Natural Mystic (1977) - Bob Marley The Wailers.mp3', title: 'Bob Marley - Natural Mystic' },
+    ];
+
+    await customElements.whenDefined('my-playlist');
+    const plBoot = document.getElementById('pl');
+    for (let i = 0; i < 80; i++) {
+      if (plBoot?.shadowRoot?.querySelector('#list')) break;
+      await new Promise((r) => requestAnimationFrame(r));
+    }
+
+    let ctx = null;
+    async function ensureCtx() {
+      if (!ctx) {
+        await demoAudioHost.ensureAudioContext();
+        ctx = demoAudioHost.getAudioContext();
+      }
+      return ctx;
+    }
 
     const logEl = document.getElementById('chainLog');
     const audio = document.getElementById('media');
     const pl = document.getElementById('pl');
     const eq = document.getElementById('extEq');
     const wam = document.getElementById('extWam');
-    const btnCtxSolo = document.getElementById('btnCtxSolo');
-    const btnCtxHost = document.getElementById('btnCtxHost');
     const btnWebAudio = document.getElementById('btnWebAudioPath');
     const btnEq = document.getElementById('btnEq');
     const btnWam = document.getElementById('btnWam');
     const btnWamLoad = document.getElementById('btnWamLoad');
     const btnViz = document.getElementById('btnViz');
-    const btnTryAsset = document.getElementById('btnTryAsset');
+    const btnControls = document.getElementById('btnControls');
+    const controlsMount = document.getElementById('controlsMount');
     const filePick = document.getElementById('filePick');
 
-    let tracks = [];
-    let ctx = null;
-    let ctxMode = '';
+    let tracks =
+      pl && typeof pl.getTracks === 'function' && pl.getTracks().length
+        ? [...pl.getTracks()]
+        : [...DEFAULT_TRACKS];
     let mediaSource = null;
     let bridge = null;
     let masterGain = null;
-    let analyser = null;
+    let panner = null;
     let tailBeforeMaster = null;
+    let analyser = null;
+    let controlsEl = null;
 
-    /** Repère l’étape la plus avancée atteinte (ne revient jamais en arrière si on ajoute des pistes plus tard). */
+    let currentIndex = 0;
+    let shuffle = false;
+    let loopMode = 0;
+    let shuffledIndices = [];
+    let _meterRunning = false;
+
     let progressMax = 0;
+    let chainSummary = 'Contexte : module integration-demo-host.js — aucun nœud de signal utilisateur pour l’instant.';
 
-    function log(msg) {
-      logEl.textContent = typeof msg === 'string' ? msg : msg.join('\n');
+    function logJournal(lines) {
+      logEl.textContent = [chainSummary, '', ...lines].join('\n');
     }
 
     function setProgress(stepIndex) {
@@ -247,8 +348,126 @@
       }
     }
 
+    function applyVolume(v) {
+      const x = Number(v);
+      if (masterGain && ctx) {
+        masterGain.gain.setValueAtTime(x, ctx.currentTime);
+      } else {
+        audio.volume = x;
+      }
+    }
+
+    function applyBalance(p) {
+      if (panner && ctx) {
+        panner.pan.setValueAtTime(Number(p), ctx.currentTime);
+      }
+    }
+
+    function syncPlaylistDataFromDetail(d) {
+      switch (d.action) {
+        case 'add':
+          if (d.track !== undefined && d.index !== undefined) {
+            if (currentIndex !== -1 && currentIndex >= d.index) currentIndex++;
+          }
+          break;
+        case 'remove':
+          if (d.index === undefined) break;
+          if (currentIndex === d.index) currentIndex = -1;
+          else if (currentIndex > d.index) currentIndex--;
+          break;
+        case 'reorder':
+          if (d.from !== undefined && d.to !== undefined) {
+            if (currentIndex === d.from) currentIndex = d.to;
+            else if (d.from < currentIndex && d.to >= currentIndex) currentIndex--;
+            else if (d.from > currentIndex && d.to <= currentIndex) currentIndex++;
+          }
+          break;
+        default:
+          break;
+      }
+    }
+
+    function initShuffle() {
+      const list = pl.getTracks();
+      shuffledIndices = list.map((_, i) => i);
+      for (let i = shuffledIndices.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffledIndices[i], shuffledIndices[j]] = [shuffledIndices[j], shuffledIndices[i]];
+      }
+    }
+
+    function getNextTrackIndex() {
+      const list = pl.getTracks();
+      const len = list.length;
+      if (len === 0) return undefined;
+      if (!shuffle) {
+        const nxt = pl.nextIndex();
+        if (nxt !== undefined) return nxt;
+        if (loopMode === 1) return 0;
+        return undefined;
+      }
+      if (!shuffledIndices || shuffledIndices.length !== len) initShuffle();
+      const curPos = shuffledIndices.indexOf(currentIndex);
+      if (curPos === -1) {
+        initShuffle();
+        return shuffledIndices[0];
+      }
+      const nextPos = curPos + 1;
+      if (nextPos < shuffledIndices.length) return shuffledIndices[nextPos];
+      if (loopMode === 1) {
+        initShuffle();
+        return shuffledIndices[0];
+      }
+      return undefined;
+    }
+
+    function playNext() {
+      const nxt = getNextTrackIndex();
+      if (nxt !== undefined) pl.play(nxt);
+    }
+
+    function playPrevious() {
+      const list = pl.getTracks();
+      if (list.length === 0) return;
+      if (shuffle) {
+        if (!shuffledIndices || shuffledIndices.length !== list.length) initShuffle();
+        const curPos = shuffledIndices.indexOf(currentIndex);
+        if (curPos > 0) {
+          pl.play(shuffledIndices[curPos - 1]);
+          return;
+        }
+        if (loopMode === 1) pl.play(shuffledIndices[shuffledIndices.length - 1]);
+        return;
+      }
+      const prev = pl.previousIndex();
+      if (prev !== undefined) pl.play(prev);
+      else if (loopMode === 1) pl.play(list.length - 1);
+    }
+
+    function handleTrackEnd() {
+      _meterRunning = false;
+      if (controlsEl) controlsEl.setMeterPercent(0);
+      if (loopMode === 2) {
+        audio.currentTime = 0;
+        audio.play().catch(() => {});
+        return;
+      }
+      const nxt = getNextTrackIndex();
+      if (nxt !== undefined) pl.play(nxt);
+    }
+
     function syncWebAudioButton() {
-      btnWebAudio.disabled = !(ctx && tracks.length > 0 && !mediaSource);
+      btnWebAudio.disabled = !(tracks.length > 0 && !mediaSource);
+    }
+
+    function syncControlsButton() {
+      btnControls.disabled = !(tracks.length > 0 && !controlsEl);
+    }
+
+    function syncRouteProgressBeforeControls() {
+      if (controlsEl) return;
+      if (tracks.length > 0) setProgress(1);
+      else setProgress(0);
     }
 
     function afterTracksUpdate() {
@@ -256,25 +475,55 @@
       if (tracks.length) {
         audio.src = tracks[0].src;
         pl.highlight(0);
+        currentIndex = 0;
       }
-      if (ctx && tracks.length > 0) setProgress(2);
-      else if (ctx) setProgress(1);
+      syncRouteProgressBeforeControls();
+      syncControlsButton();
       syncWebAudioButton();
     }
 
-    pl.setTracks([]);
+    const updateMeter = () => {
+      if (!_meterRunning) return;
+      requestAnimationFrame(updateMeter);
+      if (!analyser || !controlsEl) return;
+      const timeData = new Uint8Array(analyser.fftSize);
+      analyser.getByteTimeDomainData(timeData);
+      let sumSq = 0;
+      for (let i = 0; i < timeData.length; i++) {
+        const c = (timeData[i] - 128) / 128;
+        sumSq += c * c;
+      }
+      const rms = Math.sqrt(sumSq / timeData.length);
+      controlsEl.setMeterPercent(Math.min(100, Math.max(0, rms * 140)));
+    };
+
+    pl.addEventListener('playlist-changed', (e) => {
+      tracks = pl.getTracks();
+      syncPlaylistDataFromDetail(e.detail);
+      syncRouteProgressBeforeControls();
+      syncControlsButton();
+      syncWebAudioButton();
+    });
     pl.addEventListener('play-track', (e) => {
-      const t = tracks[e.detail.index];
+      currentIndex = e.detail.index;
+      const list = pl.getTracks();
+      const t = list[e.detail.index];
       if (t) {
         audio.src = t.src;
         audio.play().catch(() => {});
       }
     });
 
-    btnTryAsset.addEventListener('click', () => {
-      tracks = [...tracks, { ...ASSET_TRY }];
-      afterTracksUpdate();
-      log([...(logEl.textContent ? [logEl.textContent] : []), 'Piste ajoutée : ' + ASSET_TRY.src].join('\n'));
+    audio.addEventListener('ended', handleTrackEnd);
+    audio.addEventListener('play', () => {
+      if (analyser && controlsEl && !_meterRunning) {
+        _meterRunning = true;
+        updateMeter();
+      }
+    });
+    audio.addEventListener('pause', () => {
+      _meterRunning = false;
+      if (controlsEl) controlsEl.setMeterPercent(0);
     });
 
     filePick.addEventListener('change', () => {
@@ -288,77 +537,90 @@
       afterTracksUpdate();
     });
 
-    function explainHead() {
-      if (ctxMode === 'host') {
-        return [
-          'Contexte : créé dans integration-demo-host.js (ce fichier n’a pas de new AudioContext).',
-          'Référence utilisée pour tout le graphe : la même pour mediaSource, EQ, WAM, Analyser.',
-          '',
-        ];
+    function mountPlayerControls() {
+      if (controlsEl) return;
+      controlsEl = document.createElement('my-player-controls');
+      controlsMount.appendChild(controlsEl);
+      controlsMount.style.display = 'block';
+      applyVolume(controlsEl.getVolumeValue());
+      controlsEl.setShuffleActive(shuffle);
+      controlsEl.setLoopMode(loopMode);
+
+      controlsEl.addEventListener('controls-play', async () => {
+        try {
+          if (ctx) await ctx.resume();
+          await audio.play();
+        } catch (_) {}
+      });
+      controlsEl.addEventListener('controls-pause', () => {
+        audio.pause();
+      });
+      controlsEl.addEventListener('controls-next', () => playNext());
+      controlsEl.addEventListener('controls-prev', () => playPrevious());
+      controlsEl.addEventListener('controls-shuffle', () => {
+        shuffle = !shuffle;
+        if (shuffle) initShuffle();
+        controlsEl.setShuffleActive(shuffle);
+      });
+      controlsEl.addEventListener('controls-loop', () => {
+        loopMode = (loopMode + 1) % 3;
+        controlsEl.setLoopMode(loopMode);
+      });
+      controlsEl.addEventListener('controls-volume', (e) => {
+        applyVolume(e.detail.value);
+      });
+      controlsEl.addEventListener('controls-balance', (e) => {
+        applyBalance(e.detail.value);
+      });
+
+      btnControls.disabled = true;
+      setProgress(2);
+      chainSummary =
+        'UI : my-player-controls monté ; volume sur HTMLMediaElement.volume tant que le graphe Web Audio n’est pas branché ; balance inactive sans StereoPanner.';
+      logJournal([
+        'Étape 2 terminée.',
+        'Étape 3 : bouton « Brancher le média au graphe » (MediaElementSource, gain, panoramique).',
+      ]);
+      syncWebAudioButton();
+    }
+
+    btnControls.addEventListener('click', () => {
+      mountPlayerControls();
+    });
+
+    btnWebAudio.addEventListener('click', async () => {
+      mountPlayerControls();
+      if (!tracks.length || mediaSource || !controlsEl) return;
+      await ensureCtx();
+      try {
+        mediaSource = ctx.createMediaElementSource(audio);
+      } catch (e) {
+        console.warn(e);
+        logJournal([
+          'Erreur : MediaElementSource déjà créé pour cet &lt;audio&gt; ou média incompatible.',
+          'Rechargez la page pour repartir de zéro.',
+        ]);
+        return;
       }
-      return [
-        'Contexte : créé dans ce script (option A : new AudioContext sur cette page).',
-        '',
-      ];
-    }
-
-    function explainChain(lines) {
-      log([...explainHead(), ...lines]);
-    }
-
-    btnCtxSolo.addEventListener('click', async () => {
-      if (ctx) return;
-      ctx = new (window.AudioContext || window.webkitAudioContext)();
-      await ctx.resume();
-      ctxMode = 'solo';
-      btnCtxSolo.disabled = true;
-      btnCtxHost.disabled = true;
-      if (tracks.length > 0) setProgress(2);
-      else setProgress(1);
-      syncWebAudioButton();
-      explainChain([
-        'Étape 0 OK — option A.',
-        tracks.length ? 'Étape 1 déjà prête : lancez la lecture native ou passez à l’étape 2.' : 'Étape 1 : ajoutez au moins un fichier audio.',
-      ]);
-    });
-
-    btnCtxHost.addEventListener('click', async () => {
-      if (ctx) return;
-      await demoAudioHost.ensureAudioContext();
-      ctx = demoAudioHost.getAudioContext();
-      ctxMode = 'host';
-      btnCtxSolo.disabled = true;
-      btnCtxHost.disabled = true;
-      if (tracks.length > 0) setProgress(2);
-      else setProgress(1);
-      syncWebAudioButton();
-      explainChain([
-        'Étape 0 OK — option B (voir integration-demo-host.js).',
-        tracks.length ? 'Complètez ou passez à l’étape 2.' : 'Ajoutez un fichier audio à l’étape 1.',
-      ]);
-    });
-
-    btnWebAudio.addEventListener('click', () => {
-      if (!ctx || !tracks.length || mediaSource) return;
-      mediaSource = ctx.createMediaElementSource(audio);
       masterGain = ctx.createGain();
-      masterGain.gain.value = 0.85;
+      masterGain.gain.value = controlsEl.getVolumeValue();
+      panner = ctx.createStereoPanner();
+      panner.pan.value = controlsEl.getBalanceValue();
+      audio.volume = 1;
       mediaSource.connect(masterGain);
-      masterGain.connect(ctx.destination);
+      masterGain.connect(panner);
+      panner.connect(ctx.destination);
       tailBeforeMaster = mediaSource;
       btnWebAudio.disabled = true;
       setProgress(3);
       btnEq.disabled = false;
-      explainChain([
-        'Étape 2 OK.',
-        'Graphe : MediaElementSource → masterGain → destination',
-        '',
-        'Étape 3 : insertion possible de l’EQ (même ctx).',
-      ]);
+      chainSummary =
+        'Graphe : MediaElementSource → GainNode (maître) → StereoPanner → destination. Les événements controls-volume / controls-balance ciblent ces nœuds.';
+      logJournal(['Étape 3 terminée.', 'Étape 4 : insérer l’égaliseur (pont + setInput / getOutput).']);
     });
 
     btnEq.addEventListener('click', () => {
-      if (!ctx || !mediaSource || bridge) return;
+      if (!mediaSource || bridge) return;
       mediaSource.disconnect(masterGain);
       bridge = ctx.createGain();
       bridge.gain.value = 1;
@@ -372,14 +634,21 @@
       setProgress(4);
       btnWam.disabled = false;
       btnWamLoad.disabled = false;
-      explainChain([
-        'Étape 3 OK.',
-        'Graphe : media → pont → EQ → master → destination',
-      ]);
+      btnViz.disabled = false;
+      chainSummary =
+        'Graphe : MediaElementSource → pont → EQ → GainNode (maître) → StereoPanner → destination.';
+      logJournal(['Étape 4 terminée.', 'Étape 5 : WAM optionnel, ou passer à l’étape 6 (visualiseur).']);
     });
 
     btnWam.addEventListener('click', () => {
-      if (!ctx || !bridge || wam.__inserted) return;
+      if (analyser) {
+        logJournal([
+          'Insertion WAM refusée après l’analyseur dans ce parcours fixe.',
+          'Rechargez la page pour recommencer.',
+        ]);
+        return;
+      }
+      if (!bridge || wam.__inserted) return;
       eq.getOutput().disconnect(masterGain);
       wam.style.display = 'block';
       wam.setAudioContext(ctx);
@@ -389,11 +658,9 @@
       wam.__inserted = true;
       btnWam.disabled = true;
       setProgress(5);
-      btnViz.disabled = false;
-      explainChain([
-        'Étape 4 OK.',
-        'Graphe : … → EQ → WAM → master → destination',
-      ]);
+      chainSummary =
+        'Graphe : … → EQ → WAM → GainNode (maître) → StereoPanner → destination.';
+      logJournal(['Étape 5 (WAM) terminée.', 'Étape 6 : analyseur + visualiseur.']);
     });
 
     btnWamLoad.addEventListener('click', () => {
@@ -402,7 +669,7 @@
     });
 
     btnViz.addEventListener('click', () => {
-      if (!tailBeforeMaster || !ctx || !masterGain || analyser) return;
+      if (!tailBeforeMaster || !masterGain || analyser) return;
       tailBeforeMaster.disconnect(masterGain);
       analyser = ctx.createAnalyser();
       analyser.fftSize = 2048;
@@ -413,18 +680,24 @@
       viz.setAnalyser(analyser);
       viz.start();
       btnViz.disabled = true;
+      btnWam.disabled = true;
+      btnWamLoad.disabled = true;
       setProgress(6);
-      explainChain([
-        'Étape 5 OK.',
-        'Graphe : … → AnalyserNode → master → destination',
-        'Un seul <my-visualizer> : mode spectrum ou waveform via son menu interne.',
-        '',
-        'Les composants n’imposent ni lecteur ni contexte : ils reçoivent vos nœuds et votre ctx.',
+      chainSummary =
+        'Graphe : … → queue → AnalyserNode → GainNode (maître) → StereoPanner → destination. Le VU du bloc contrôles lit l’analyseur pendant la lecture.';
+      logJournal([
+        'Étape 6 terminée — toutes les cartes sont cochées.',
+        'Comparer avec le graphe du lecteur monolithique dans SPECIFICATION.md (section graphe audio).',
       ]);
     });
 
-    setProgress(0);
-    syncWebAudioButton();
+    afterTracksUpdate();
+    chainSummary =
+      'Étape 1 : HTMLMediaElement seul ; AudioContext à l’étape 3 (integration-demo-host.js).';
+    logJournal([
+      'Étape 1 prête (playlist + média).',
+      'Étape 2 : monter my-player-controls avant de créer le MediaElementSource.',
+    ]);
   </script>
 </body>
 </html>

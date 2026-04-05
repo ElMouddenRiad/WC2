@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NEXUS — Modular</title>
+  <link rel="stylesheet" href="./css/modular-app.css" />
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      box-sizing: border-box;
+    }
+    body {
+      background: radial-gradient(ellipse 120% 80% at 50% -10%, rgba(0, 40, 80, 0.45), transparent 55%),
+        linear-gradient(180deg, #030308 0%, #060a18 40%, #0a0418 100%);
+    }
+  </style>
+  <script type="module" src="./modular-player.js"></script>
+</head>
+<body>
+  <div class="modular-root modular-fixed audio-player-shell" id="modRoot">
+    <div class="panel">
+      <div class="header">
+        <div class="brand">
+          <div class="name">NEXUS AURAL</div>
+          <div class="sub">MODULAR · AJOUTEZ UN MODULE · DÉPOSEZ-LE DANS N’IMPORTE QUEL EMPLACEMENT</div>
+        </div>
+        <div id="status" class="status" role="status" aria-live="polite"></div>
+      </div>
+
+      <div class="modular-toggles">
+        <label><input type="checkbox" id="togPlaylist" checked /> Playlist</label>
+        <label><input type="checkbox" id="togEq" checked /> Égaliseur</label>
+        <label><input type="checkbox" id="togWam" checked /> WAM</label>
+        <label><input type="checkbox" id="togViz" checked /> Visualiseur</label>
+        <label><input type="checkbox" id="togControls" checked /> Contrôles</label>
+      </div>
+
+      <audio id="media" controls preload="metadata" crossorigin="anonymous"></audio>
+      <div class="time-info">
+        <span id="curtime">0:00</span> / <span id="duration">0:00</span>
+      </div>
+      <div class="progress" id="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" tabindex="0">
+        <div class="progress-buffer" id="progress-buffer"></div>
+        <div class="progress-bar" id="progress-bar"></div>
+      </div>
+
+      <div class="grid" id="mainGrid">
+        <div class="dock-slot dock-slot--empty" data-slot="slot1" style="grid-area: slot1"></div>
+        <div class="dock-slot dock-slot--empty" data-slot="slot2" style="grid-area: slot2"></div>
+        <div class="dock-slot dock-slot--empty" data-slot="slot3" style="grid-area: slot3"></div>
+        <div class="dock-slot dock-slot--empty" data-slot="slot4" style="grid-area: slot4"></div>
+        <div class="dock-slot dock-slot--empty" data-slot="slot5" style="grid-area: slot5"></div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

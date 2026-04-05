@@ -26,3 +26,40 @@
   --fx-radius: 14px;
   --fx-radius-sm: 8px;
 }
+
+/**
+ * Conteneur avec défilement vertical uniquement si le contenu dépasse.
+ * Même palette que playlist.css (scrollbars discrètes).
+ */
+.fx-scrollbar-y {
+  scrollbar-width: thin;
+  scrollbar-color: var(--fx-border-strong) transparent;
+}
+.fx-scrollbar-y::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.fx-scrollbar-y::-webkit-scrollbar-track {
+  background: transparent;
+}
+.fx-scrollbar-y::-webkit-scrollbar-thumb {
+  background: var(--fx-border-strong);
+  border-radius: 4px;
+}
+
+/* Défilement de la fenêtre (même teinte que la playlist) */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--fx-border-strong) transparent;
+}
+html::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+html::-webkit-scrollbar-track {
+  background: transparent;
+}
+html::-webkit-scrollbar-thumb {
+  background: var(--fx-border-strong);
+  border-radius: 4px;
+}

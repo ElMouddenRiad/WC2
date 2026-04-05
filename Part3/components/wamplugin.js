@@ -1,7 +1,3 @@
-/**
- * <wam-plugin> — Web Audio Module effect plugin loader
- * Loads WAM2 plugins by URL and inserts them into the audio graph.
- */
 class WamPlugin extends HTMLElement {
   static get observedAttributes() { return ['src', 'name']; }
 
@@ -14,7 +10,6 @@ class WamPlugin extends HTMLElement {
     this.bypassed = false;
     this._pluginLoading = false;
 
-    // Audio routing nodes
     this._inputNode = null;
     this._outputNode = null;
     this._dryGain = null;
@@ -103,11 +98,9 @@ class WamPlugin extends HTMLElement {
     this._dryGain.gain.value = 1;
     this._wetGain.gain.value = 0;
 
-    // Default passthrough: input -> dry -> output
     this._inputNode.connect(this._dryGain);
     this._dryGain.connect(this._outputNode);
 
-    // Auto-load plugin from src attribute if present
     const src = this.getAttribute('src');
     if (src) this.loadPlugin(src);
   }
@@ -131,7 +124,6 @@ class WamPlugin extends HTMLElement {
     if (this._pluginLoading) return;
     this._pluginLoading = true;
 
-    // Validate URL
     try { new URL(url); } catch {
       if (statusEl) statusEl.textContent = 'Invalid URL';
       this._pluginLoading = false;
@@ -141,10 +133,8 @@ class WamPlugin extends HTMLElement {
     if (statusEl) statusEl.textContent = 'Loading WAM host SDK…';
 
     try {
-      // Destroy previous plugin if any
       this.destroyPlugin();
 
-      // Initialize WAM host
       const { default: initializeWamHost } = await import(
         'https://www.webaudiomodules.com/sdk/2.0.0-alpha.6/src/initializeWamHost.js'
       );
@@ -152,21 +142,17 @@ class WamPlugin extends HTMLElement {
 
       if (statusEl) statusEl.textContent = 'Loading plugin…';
 
-      // Load the WAM plugin
       const { default: WAM } = await import(url);
       const pluginInstance = await WAM.createInstance(hostGroupId, this.audioContext);
       this.pluginInstance = pluginInstance;
 
-      // Rewire audio: input -> plugin -> wetGain -> output
       this._inputNode.disconnect();
       this._inputNode.connect(pluginInstance.audioNode);
       pluginInstance.audioNode.connect(this._wetGain);
       this._wetGain.connect(this._outputNode);
-      // Also keep dry path available
       this._inputNode.connect(this._dryGain);
       this._dryGain.connect(this._outputNode);
 
-      // Set dry/wet based on bypass state
       if (this.bypassed) {
         this._wetGain.gain.value = 0;
         this._dryGain.gain.value = 1;
@@ -177,7 +163,6 @@ class WamPlugin extends HTMLElement {
 
       if (statusEl) statusEl.textContent = `Loaded: ${pluginInstance.descriptor?.name || 'WAM plugin'}`;
 
-      // Auto-show the plugin GUI
       const guiContainer = this.shadowRoot?.querySelector('#pluginGui');
       if (guiContainer) {
         guiContainer.innerHTML = '';
@@ -244,7 +229,6 @@ class WamPlugin extends HTMLElement {
     const container = this.shadowRoot?.querySelector('#pluginGui');
     if (container) container.innerHTML = '';
 
-    // Restore passthrough
     if (this._inputNode && this._outputNode && this._dryGain) {
       try { this._inputNode.disconnect(); } catch(e){}
       try { this._wetGain?.disconnect(); } catch(e){}

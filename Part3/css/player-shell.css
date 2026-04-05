@@ -1,0 +1,378 @@
+/**
+ * Styles partagés entre <my-audio-player> (shadow) et modular-player.html.
+ * Préfixe .audio-player-shell : ajouter la classe sur la racine modulaire ou un wrapper interne au shadow.
+ * (Les contrôles transport / row / meter sont dans player-controls.css, pas ici.)
+ */
+
+.audio-player-shell .panel{
+  position: relative;
+  background: linear-gradient(165deg, rgba(10, 18, 42, 0.92) 0%, rgba(4, 8, 24, 0.96) 50%, rgba(8, 4, 28, 0.9) 100%);
+  border: 1px solid var(--fx-border);
+  border-radius: var(--fx-radius);
+  padding: 14px;
+  box-shadow: var(--fx-glow-cyan), inset 0 1px 0 rgba(255,255,255,0.06);
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.audio-player-shell .panel::before{
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-image:
+    linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+  background-size: 24px 24px;
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.audio-player-shell .panel::after{
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 240, 255, 0.12), transparent 55%);
+  pointer-events: none;
+}
+
+.audio-player-shell .header{
+  position: relative;
+  z-index: 1;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 12px;
+  padding: 6px 6px 12px;
+  border-bottom: 1px solid var(--fx-border);
+  margin-bottom: 12px;
+}
+
+.audio-player-shell .brand{
+  display:flex;
+  flex-direction:column;
+  line-height: 1.15;
+}
+.audio-player-shell .brand .name{
+  font-family: var(--fx-font-display);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: 15px;
+  background: linear-gradient(90deg, var(--fx-cyan), var(--fx-magenta));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 12px rgba(0, 240, 255, 0.35));
+}
+.audio-player-shell .brand .sub{
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--fx-text-dim);
+  margin-top: 4px;
+}
+
+.audio-player-shell .status{
+  min-height: 18px;
+  font-size: 12px;
+  color: var(--fx-magenta);
+  text-align: right;
+  text-shadow: 0 0 8px rgba(255, 43, 214, 0.4);
+}
+
+.audio-player-shell .grid{
+  position: relative;
+  z-index: 1;
+  display:grid;
+  grid-template-columns: minmax(300px, 1.2fr) minmax(380px, 1.8fr) minmax(230px, 0.9fr);
+  grid-template-areas:
+    "slot1 slot2 slot2"
+    "slot1 slot3 slot4"
+    "slot5 slot5 slot5";
+  gap: 14px;
+  align-items: stretch;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.audio-player-shell .card{
+  background: var(--fx-surface);
+  border: 1px solid var(--fx-border);
+  border-radius: var(--fx-radius);
+  padding: 12px;
+  overflow: auto;
+  min-width: 0;
+  position: relative;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04), 0 4px 24px rgba(0,0,0,0.35);
+  backdrop-filter: blur(8px);
+}
+
+.audio-player-shell .card-playlist{
+  display:flex;
+  flex-direction:column;
+  min-height: 0;
+  overflow: hidden;
+}
+.audio-player-shell .card-playlist .card-header{
+  flex-shrink: 0;
+}
+.audio-player-shell .card-playlist .add-track{
+  flex-shrink: 0;
+}
+.audio-player-shell .card-wam{ overflow: visible; }
+
+.audio-player-shell .grid-gutter{
+  position: absolute;
+  z-index: 10;
+  background: transparent;
+  transition: background 0.15s ease;
+}
+.audio-player-shell .grid-gutter-col{
+  width: 10px;
+  top: 0;
+  cursor: col-resize;
+}
+.audio-player-shell .grid-gutter-row{
+  height: 10px;
+  left: 0;
+  cursor: row-resize;
+}
+.audio-player-shell .grid-gutter:hover,
+.audio-player-shell .grid-gutter.active{
+  background: var(--fx-cyan-dim);
+  border-radius: 2px;
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.3);
+}
+
+.audio-player-shell .card-header{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.audio-player-shell .card-header .title{
+  margin-bottom: 0;
+}
+
+.audio-player-shell .detach-btn{
+  appearance: none;
+  background: var(--fx-surface-2);
+  border: 1px solid var(--fx-border);
+  border-radius: 6px;
+  color: var(--fx-cyan);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 6px;
+  opacity: 0.65;
+  transition: opacity 0.15s ease, box-shadow 0.15s;
+  line-height: 1;
+  min-width: auto;
+}
+.audio-player-shell .detach-btn:hover{
+  opacity: 1;
+  box-shadow: var(--fx-glow-cyan);
+}
+
+.audio-player-shell .card.detached{
+  position: fixed;
+  z-index: 1000;
+  box-shadow: var(--fx-glow-cyan), 0 16px 48px rgba(0,0,0,0.65);
+  background: linear-gradient(165deg, rgba(10, 18, 42, 0.98), rgba(4, 8, 24, 0.99));
+  border: 1px solid var(--fx-border-strong);
+  resize: both;
+  overflow: auto;
+  min-width: 200px;
+  min-height: 120px;
+  max-width: 90vw;
+  max-height: 90vh;
+}
+.audio-player-shell .card.card-playlist.detached{
+  overflow: hidden;
+}
+.audio-player-shell .card.detached::after{
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 14px;
+  height: 14px;
+  cursor: nwse-resize;
+  background: linear-gradient(135deg, transparent 50%, var(--fx-cyan) 50%);
+  opacity: 0.35;
+  border-radius: 0 0 14px 0;
+  pointer-events: none;
+}
+.audio-player-shell .card.detached .card-header{
+  cursor: grab;
+  user-select: none;
+}
+.audio-player-shell .card.detached .card-header:active{
+  cursor: grabbing;
+}
+
+.audio-player-shell .card-placeholder{
+  border: 2px dashed var(--fx-border);
+  border-radius: var(--fx-radius);
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+.audio-player-shell .card-placeholder .ph-label{
+  font-family: var(--fx-font-display);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  opacity: 0.35;
+  color: var(--fx-text-dim);
+}
+.audio-player-shell .card-placeholder.drag-hover{
+  border-color: var(--fx-cyan);
+  background: var(--fx-cyan-dim);
+  box-shadow: var(--fx-glow-cyan);
+}
+.audio-player-shell .card-placeholder.drag-hover .ph-label{
+  opacity: 0.95;
+  color: var(--fx-cyan);
+}
+
+.audio-player-shell .add-track{
+  margin-bottom: 10px;
+  display:flex;
+  gap: 6px;
+  align-items:center;
+}
+
+.audio-player-shell .add-track input[type="url"]{
+  flex:1;
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: var(--fx-radius-sm);
+  border:1px solid var(--fx-border);
+  background: rgba(0,0,0,0.35);
+  color: var(--fx-text);
+  font-family: var(--fx-font-ui);
+}
+.audio-player-shell .add-track input[type="url"]::placeholder{
+  color: var(--fx-text-dim);
+}
+
+.audio-player-shell .add-track button{
+  padding: 8px 10px;
+  min-width: fit-content;
+}
+
+.audio-player-shell .card-playlist my-playlist{
+  flex: 1;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.audio-player-shell .title{
+  font-family: var(--fx-font-display);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--fx-cyan);
+  text-shadow: 0 0 10px rgba(0, 240, 255, 0.35);
+  margin-bottom: 10px;
+}
+
+.audio-player-shell audio{
+  width:100%;
+  box-sizing: border-box;
+  margin-top: 6px;
+  filter: contrast(1.05) saturate(1.1);
+  max-width: 100%;
+  border-radius: var(--fx-radius-sm);
+}
+
+.audio-player-shell button{
+  appearance:none;
+  font-family: var(--fx-font-ui);
+  border: 1px solid var(--fx-border);
+  background: var(--fx-surface-2);
+  color: var(--fx-text);
+  border-radius: 12px;
+  padding: 10px 14px;
+  cursor:pointer;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  transition: transform .06s ease, background .15s ease, box-shadow .15s ease;
+}
+.audio-player-shell button:active{ transform: translateY(1px); }
+.audio-player-shell button:hover{
+  background: rgba(0, 240, 255, 0.12);
+  border-color: var(--fx-border-strong);
+  box-shadow: var(--fx-glow-cyan);
+}
+
+.audio-player-shell .time-info{
+  font-size:11px;
+  color: var(--fx-text-dim);
+  text-align:center;
+  margin-top:4px;
+  font-variant-numeric: tabular-nums;
+}
+.audio-player-shell .progress{
+  position:relative;
+  height:8px;
+  background: rgba(0,0,0,0.45);
+  border-radius:4px;
+  cursor:pointer;
+  margin:4px 0 12px;
+  border: 1px solid var(--fx-border);
+  overflow: hidden;
+}
+.audio-player-shell .progress-buffer{
+  position:absolute;
+  top:0;
+  left:0;
+  height:100%;
+  width:0;
+  background: rgba(0, 240, 255, 0.2);
+  border-radius:4px;
+}
+.audio-player-shell .progress-bar{
+  position:absolute;
+  top:0;
+  left:0;
+  height:100%;
+  width:0;
+  background: linear-gradient(90deg, var(--fx-cyan), var(--fx-magenta));
+  border-radius:4px;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.6);
+}
+
+@media (max-width: 1200px){
+  .audio-player-shell .grid{
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "slot1 slot2"
+      "slot1 slot3"
+      "slot4 slot4"
+      "slot5 slot5";
+    gap: 10px;
+  }
+}
+
+@media (max-width: 768px){
+  .audio-player-shell .grid{
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "slot1"
+      "slot2"
+      "slot3"
+      "slot4"
+      "slot5";
+  }
+  .audio-player-shell .card{ padding: 10px; }
+}

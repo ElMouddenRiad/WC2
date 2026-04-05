@@ -1,174 +1,161 @@
-# Part 3 — Lecteur Audio en Web Components
+# Partie 3 — Lecteur audio en Web Components
 
 > Projet réalisé dans le cadre du cours **M2 NUMRES — Web Components 2025/2026** (Michel Buffa).
 
 ## Contexte du cours
 
-Le cours étudie les **APIs standards Web Components** (Custom Elements, Shadow DOM, ES Modules) présentes nativement dans le navigateur, sans framework. L'objectif est de concevoir un lecteur audio avancé décomposé en composants réutilisables, intégrant la **Web Audio API** pour le traitement audio (égaliseur, balance, visualisations).
+Le cours porte sur les **API Web Components** natives (Custom Elements, Shadow DOM, ES modules), sans framework. Objectif : un lecteur audio décomposé en **composants réutilisables**, branchés sur la **Web Audio API** (égaliseur, balance, visualisation, WAM).
 
 ### Séances couvertes
 
 | Séance | Objectif |
 |--------|----------|
-| 1-2 | Creation d'un premier Web Component `<my-audio-player>` utilisant la librairie webaudiocontrols et des assets audio |
-| 3 | Introduction Web Audio API : ajout balance, egaliseur graphique, visualiseur frequence / waveform / volume |
-| 4 | Barre de progression custom, partie bufferisee, duree / temps courant, composant playlist (click to play, auto-next, loop, shuffle, drag & drop, suppression), communication inter-composants |
+| 1–2 | Premier composant `<my-audio-player>`, librairie webaudio-controls, assets audio |
+| 3 | Web Audio API : balance, égaliseur, visualiseur (spectre / waveform / volume) |
+| 4 | Barre de progression, buffer, durées ; playlist (lecture, auto-suivant, boucles, shuffle, glisser-déposer, suppression / corbeille) ; événements entre composants |
 
-## Fonctionnalites implementees
+## Fonctionnalités implémentées
 
-### Lecteur audio (`<my-audio-player>`)
-- Lecture / pause / previous / next
-- Barre de progression custom cliquable + visualisation de la zone bufferisee
-- Affichage duree totale et temps courant (evenements `loadedmetadata`, `timeupdate`, `progress` de `<audio>`)
-- Reglage volume (slider + knob webaudiocontrols)
-- Reglage balance (StereoPannerNode)
-- VU-metre RMS temps reel
-- Modes de lecture : boucle (off / all / one), shuffle (Fisher-Yates)
+### Lecteur (`<my-audio-player>`)
+
+- Transport, volume (slider + knob), balance (`StereoPannerNode`), VU-mètre RMS
+- Boucles (off / toutes / une piste), shuffle
+- Barre de progression cliquable, zone bufferisée, temps courant / durée
 - Ajout de pistes par URL ou fichiers locaux
-- Integration MediaSession API (controles OS)
-- Navigation clavier globale (Space = play/pause, fleches = prev/next)
+- `MediaSession`, raccourcis clavier globaux (Espace, flèches) sur la page du lecteur
+- Grille d’emplacements neutres (`slot1`–`slot5`), panneaux détachables / redimensionnables
+- WAM optionnel dans le graphe
 
 ### Playlist (`<my-playlist>`)
-- Affichage de la liste des morceaux avec duree
-- Clic sur un morceau = lecture immediate
-- Passage automatique au morceau suivant a la fin
-- Suppression d'un morceau (bouton X ou touche Delete)
-- Reorganisation par drag & drop
-- Navigation clavier (Enter/Space = play, Delete = supprimer)
 
-### Egaliseur (`<my-equalizer>`)
-- 10 bandes (31 Hz a 16 kHz) avec BiquadFilterNodes (type peaking)
-- Sliders verticaux (webaudio-slider de webaudiocontrols)
-- Presets : Flat, Bass Boost, Vocal, Phone
-- Bypass : desactive temporairement l'EQ sans perdre les reglages
-- Mode compact via attribut `compact`
+- Liste, durées, clic pour lire, auto-suivant
+- Suppression (corbeille, restauration), réordonnancement au drag
+- Raccourcis clavier dans le composant (Enter / Espace, Delete)
+
+### Égaliseur (`<my-equalizer>`)
+
+- 10 bandes peaking, presets, bypass, mode `compact`
 
 ### Visualiseur (`<my-visualizer>`)
-- Mode Spectrum (barres frequentielles via `getByteFrequencyData`)
-- Mode Waveform (courbe temporelle via `getByteTimeDomainData`)
-- Rendu canvas avec controle de framerate
-- Mode compact via attribut `compact`
 
-### Effets WAM (`<wam-plugin>`)
-- Chargement d'effets audio au format WAM2 (Web Audio Modules) par URL
-- Dry/wet routing pour bypass transparent
-- Affichage de la GUI native du plugin
-- Compatible avec la WAM Gallery (https://www.webaudiomodules.com/docs/community)
-- Testable isolement via `isolated-wam.html`
+- Modes spectrum et waveform, `compact`, `setAnalyser` + `start` / `stop`
 
-## Architecture
+### Contrôles (`<my-player-controls>`)
+
+- Transport, shuffle / boucle, volume, balance, VU ; événements `controls-*` pour l’orchestrateur
+- Import de `webaudiocontrols.js` **dans ce module uniquement** (pas dans le HTML hôte)
+
+### WAM (`<wam-plugin>`)
+
+- Chargement d’effets WAM2 par URL, dry/wet, GUI du plugin ; démo isolée : `isolated-wam.html` (bouton **Load** dans le shadow du composant après **Démarrer l’audio**)
+
+## Chargement de `webaudio-controls` (consigne cours)
+
+Fichier local : `components/libs/webaudiocontrols.js`.
+
+- **À éviter** : `<script src=".../webaudiocontrols.js">` dans les pages HTML (`index.html`, `demo-advanced.html`, etc.).
+- **À faire** : `import './libs/webaudiocontrols.js'` dans **chaque composant** qui utilise les balises `webaudio-*`. Ici : [`playercontrols.js`](components/playercontrols.js) et [`myequalizer.js`](components/myequalizer.js). [`audioplayer.js`](components/audioplayer.js) importe `playercontrols.js`, pas la lib directement.
+
+Référence des widgets : [webaudio-controls — Detail & Specs](https://g200kg.github.io/webaudio-controls/docs/detailspecs.html).
+
+## Arborescence utile
 
 ```
 Part3/
-+-- index.html                  # Page principale (layout="fixed")
-+-- demo-advanced.html          # Demonstration complete
-+-- isolated-eq.html            # Test isole de l'egaliseur
-+-- isolated-playlist.html      # Test isole de la playlist
-+-- isolated-visualizer.html    # Test isole du visualiseur
-+-- components/
-|   +-- audioplayer.js          # <my-audio-player> -- orchestration
-|   +-- myequalizer.js          # <my-equalizer>    -- traitement EQ
-|   +-- myvisualizer.js         # <my-visualizer>   -- rendu canvas
-|   +-- playlist.js             # <my-playlist>     -- gestion playlist
-|   +-- wamplugin.js            # <wam-plugin>      -- effets WAM
-|   +-- libs/webaudiocontrols.js
-+-- css/
-|   +-- theme-futuristic.css    # Variables + typo (theme spatial / neon)
-|   +-- player.css              # Styles du lecteur principal
-|   +-- equalizer.css           # Styles de l'egaliseur
-|   +-- visualizer.css          # Styles du visualiseur
-|   +-- playlist.css            # Styles de la playlist
-+-- assets/                     # Fichiers audio (mp3)
+├── index.html                    # Lecteur plein écran (layout fixed)
+├── demo-advanced.html            # Vitrine : récap fonctionnel + liens doc + même playlist que index
+├── modular-player.html           # Grille modulaire (cases à cocher, emplacements dock)
+├── modular-player.js
+├── integration-host-app.html     # Parcours ordonné : playlist → contrôles → Web Audio → EQ → WAM? → visualiseur
+├── integration-demo-host.js      # Hôte partagé : AudioContext au premier ensureAudioContext() (étape 3 ; pas de new dans le HTML)
+├── isolated-playlist.html
+├── isolated-eq.html
+├── isolated-visualizer.html
+├── isolated-wam.html
+├── isolated-controls.html        # my-player-controls + journal des événements controls-*
+├── css/
+│   ├── theme-futuristic.css
+│   ├── player.css
+│   ├── player-controls.css
+│   ├── modular-app.css
+│   ├── equalizer.css, visualizer.css, playlist.css
+├── components/
+│   ├── audioplayer.js
+│   ├── playercontrols.js
+│   ├── myequalizer.js
+│   ├── myvisualizer.js
+│   ├── playlist.js
+│   ├── wamplugin.js
+│   └── libs/webaudiocontrols.js
+├── assets/                       # MP3 de démo
+├── SPECIFICATION.md              # API détaillée (style « Detail & Specs »)
+└── README.md
 ```
 
-### Graphe audio (Web Audio API)
+## Graphe audio dans `<my-audio-player>`
 
 ```
-<audio> -> [EQ 10 bandes] -> [WAM Plugin] -> GainNode -> StereoPannerNode -> AnalyserNode -> destination
+<audio> → EQ → [WAM] → GainNode → StereoPannerNode → AnalyserNode → destination
 ```
 
-Le graphe est cree au premier clic utilisateur (respect de l'autoplay policy du navigateur).
+Création du `AudioContext` et du graphe au **premier geste de lecture** (politique autoplay). Si le WAM n’est pas chargé, la sortie de l’EQ va directement au gain.
 
-### Communication inter-composants
+Un **enchaînement pédagogique** (contrôles montés avant le `MediaElementSource`, analyseur avant le gain maître dans cette démo) est décrit dans **`integration-host-app.html`** et dans [SPECIFICATION.md](SPECIFICATION.md#intégration-dans-une-autre-application-audio).
 
-Le composant parent `<my-audio-player>` importe et instancie les sous-composants dans son Shadow DOM, puis communique avec eux via :
+## Communication entre composants
 
-| Mecanisme | Utilisation |
-|-----------|-------------|
-| **Methodes directes** | `eq.setAudioContext(ctx)`, `eq.setInput(src)`, `viz.setAnalyser(node)`, `playlist.setTracks(list)` |
-| **CustomEvents** | `play-track` (playlist -> player), `playlist-changed` (playlist -> player), `eq-change` / `eq-preset` (eq -> exterieur) |
-| **Attributs observes** | `<my-playlist>` reagit aux changements de `tracks` / `data-tracks` via `observedAttributes` + `attributeChangedCallback` |
+Le lecteur **compose** les enfants dans son Shadow DOM et appelle leurs méthodes (`setAudioContext`, `setInput`, `setAnalyser`, `setTracks`, …). Les sous-composants émettent des `CustomEvent` avec `bubbles` et `composed: true` pour que l’hôte ou le `document` puissent écouter (ex. `play-track`, `playlist-changed`, `eq-change`, `wam-loaded`).
 
-Cette approche correspond a l'option 1 du cours : le lecteur audio **importe et utilise** les composants dans sa GUI HTML en leur donnant un id.
+Tableau détaillé et contrat de chaque tag : [SPECIFICATION.md](SPECIFICATION.md).
 
-### Conformite Web Components W3C
+## Conformité Web Components (rappel)
 
-| Critere | audioplayer | playlist | equalizer | visualizer | wam-plugin |
-|---------|:-----------:|:--------:|:---------:|:----------:|:----------:|
-| `class extends HTMLElement` | oui | oui | oui | oui | oui |
-| `super()` en premier | oui | oui | oui | oui | oui |
-| `attachShadow({mode:'open'})` | oui | oui | oui | oui | oui |
-| `customElements.define()` | oui | oui | oui | oui | oui |
-| `connectedCallback` | oui | oui | oui | oui | oui |
-| `disconnectedCallback` | oui | oui | oui | oui | oui |
-| `observedAttributes` | oui | oui | oui | oui | oui |
-| `attributeChangedCallback` | oui | oui | oui | oui | oui |
-| Pas d'attribut lu dans constructor | oui | oui | oui | oui | oui |
-| CSS encapsule (`:host`) | oui | oui | oui | oui | oui |
-| Modules ES (`import`/`export`) | oui | oui | oui | oui | oui |
-| Accessibilite (ARIA) | oui | oui | oui | oui | oui |
+| Critère | audioplayer | playlist | equalizer | visualizer | wam-plugin | player-controls |
+|---------|:-----------:|:--------:|:---------:|:----------:|:----------:|:---------------:|
+| `extends HTMLElement`, `super()`, `attachShadow({mode:'open'})` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `customElements.define`, lifecycle, `observedAttributes` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| CSS encapsulé, modules ES | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 
-### API publique du lecteur
+## API publique du lecteur (rappel)
 
 ```js
-// Methodes
-player.setPlaylist([{src, title}, ...])
+player.setPlaylist([{ src, title }, ...])
 player.getPlaylist()
-player.setVolume(0.5)
-player.setBalance(-0.3)
+player.setVolume(0..1)
+player.setBalance(-1..1)
 player.playNext()
 player.playPrevious()
 player.toggleShuffle()
 player.toggleLoop()
-
-// Accesseurs Web Audio
 player.getAudioContext()
 player.getGainNode()
 player.getPannerNode()
 player.getAnalyserNode()
 ```
 
-## Lancement
+## Lancement local
 
 ```bash
 cd Part3
 npx http-server . -p 8000 -c-1
 ```
 
-Ouvrir `http://localhost:8000/index.html`.
+Ouvrir `http://localhost:8000/index.html`. Pages de test : `isolated-*.html`, `integration-host-app.html`, `modular-player.html`, `demo-advanced.html`.
 
-Les composants peuvent aussi etre testes individuellement via les pages `isolated-*.html`.
+## Intégration dans une autre application
 
-**Intégration dans une autre application audio** (même `AudioContext`, branchement progressif) : [SPECIFICATION.md](SPECIFICATION.md), [integration-host-app.html](integration-host-app.html) et le module hôte d’exemple [integration-demo-host.js](integration-demo-host.js) (option B sans `new AudioContext` dans la page).
+1. Consulter [SPECIFICATION.md — Intégration](SPECIFICATION.md#intégration-dans-une-autre-application-audio) (règles : un seul `AudioContext`, pont avant l’EQ, etc.).
+2. Référence de parcours : **`integration-host-app.html`** et **`integration-demo-host.js`** — six étapes dans l’ordre pédagogique (playlist → **`my-player-controls`** → `MediaElementSource` + gain + panoramique → EQ → WAM optionnel → analyseur + visualiseur). Le bouton de l’étape 3 se débloque dès qu’il y a des pistes et qu’aucun `MediaElementSource` n’existe encore ; le montage de **`my-player-controls`** peut se faire à l’étape 2 ou automatiquement au premier clic sur l’étape 3. La playlist et le média de l’étape 1 sont prêts sans rechargement ; recharger la page sert à repartir de zéro une fois le graphe Web Audio attaché à `<audio>`.
+3. Pour n’embarquer que le lecteur complet : un `<script type="module" src=".../audioplayer.js">` suffit en général (imports relatifs vers les autres modules).
 
-## Utilisation par URI (sans copier le repo localement)
+### Pages isolées et contrat « hôte »
 
-Les composants sont des **modules ES** ; une autre page HTML peut les charger depuis une base URL publique (GitHub Pages, autre CDN), en conservant la structure des dossiers `components/`, `css/`, `assets/` pour que les chemins `import.meta.url` restent valides.
+Les fichiers `isolated-*.html` montent un seul composant : le script de la page joue le rôle d’**hôte** (écoute des `CustomEvent`, appels à `audio` ou à Web Audio). Par exemple, **`isolated-controls.html`** relie `controls-volume` à `HTMLMediaElement.volume` et ne connecte pas `controls-balance` à un `StereoPannerNode` : le volume fonctionne, la balance reste sans effet tant que l’hôte ne fournit pas ce nœud — comportement attendu pour un composant présentant uniquement de l’UI et des événements, sans graphe intégré.
 
-**Une seule entrée** suffit souvent : le lecteur tire déjà les autres modules (`myequalizer`, `playlist`, etc.) par des imports relatifs.
+## Utilisation par URL distante
 
-```html
-<script type="module" src="https://VOTRE_HEBERGEUR/.../Part3/components/audioplayer.js"></script>
-```
+Les composants sont des modules ES ; conserver la structure `components/`, `css/`, `assets/` pour que `import.meta.url` reste valide. Attention **CORS** et en-têtes sur les `.js`.
 
-Pour n’utiliser qu’un sous-composant, pointer vers `.../components/myequalizer.js`, `playlist.js`, etc., en conservant le même chemin de base pour que `../css/...` et `./libs/...` continuent de résoudre correctement.
+## Documentation complète
 
-Ensuite utiliser `<my-audio-player>` dans le HTML comme dans `index.html`. Pour n’importer qu’un sous-composant (`myequalizer.js`, `playlist.js`, etc.), charger uniquement ce module depuis la même base URL.
-
-**Note CORS** : l’hégeur doit servir les `.js` avec les bons en-têtes ; les fichiers doivent être sur **le même site** ou le serveur doit autoriser votre origine pour `type="module"`.
-
-## Documentation API
-
-Voir [SPECIFICATION.md](SPECIFICATION.md) pour l'API complete de chaque composant, les decisions de design, et le schema de communication inter-composants.
-
-Post-mortem IA (consigne cours) : [IA_POSTMORTEM.md](IA_POSTMORTEM.md).
+- **[SPECIFICATION.md](SPECIFICATION.md)** — tags, attributs, méthodes, événements, graphes, intégration.

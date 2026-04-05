@@ -1,41 +1,77 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <title>Isolated Equalizer Test</title>
-    <script type="module" src="./components/myequalizer.js"></script>
-    <link rel="stylesheet" href="./css/theme-futuristic.css">
-    <style>
-      body {
-        background: linear-gradient(180deg, #030308, #060a14);
-        color: var(--fx-text);
-        font-family: var(--fx-font-ui), system-ui, sans-serif;
-        padding: 20px;
-      }
-      h1 { font-family: var(--fx-font-display); color: var(--fx-cyan); letter-spacing: 0.06em; }
-      my-equalizer { display:block; margin:0 auto; width:80%; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Isolé — my-equalizer</title>
+  <link rel="stylesheet" href="./css/theme-futuristic.css" />
+  <style>
+    :root { color-scheme: dark; }
+    body {
+      margin: 0;
+      min-height: 100%;
+      padding: 20px;
+      box-sizing: border-box;
+      background: radial-gradient(ellipse 90% 40% at 50% 0%, rgba(0, 60, 100, 0.35), transparent 50%),
+        linear-gradient(180deg, #030308, #060a14);
+      color: var(--fx-text);
+      font-family: var(--fx-font-ui), system-ui, sans-serif;
+      max-width: 720px;
+      margin-inline: auto;
+    }
+    h1 {
+      font-family: var(--fx-font-display), system-ui, sans-serif;
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      color: var(--fx-cyan);
+    }
+    .note { font-size: 12px; color: var(--fx-text-dim); margin-bottom: 16px; line-height: 1.45; }
+    my-equalizer {
+      display: block;
+      margin-top: 8px;
+    }
+    button {
+      margin-top: 12px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-family: var(--fx-font-ui), sans-serif;
+      font-weight: 600;
+      font-size: 13px;
+      background: var(--fx-surface-2);
+      color: var(--fx-text);
+      border: 1px solid var(--fx-border);
+      cursor: pointer;
+    }
+    button:hover { border-color: var(--fx-border-strong); box-shadow: var(--fx-glow-cyan); }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+  </style>
 </head>
 <body>
-    <h1>Standalone equalizer demo</h1>
-    <p>This page loads only <code>my-equalizer</code> and injects an AudioContext manually.</p>
-    <my-equalizer id="eq"></my-equalizer>
+  <h1>&lt;my-equalizer&gt; seul</h1>
+  <p class="note">Un oscillateur de test est branché sur l’entrée du composant après votre clic (API <code>setAudioContext</code> / <code>setInput</code>).</p>
+  <button type="button" id="startBtn">Démarrer l’audio</button>
+  <my-equalizer id="eq" compact></my-equalizer>
 
-    <script>
-    document.body.addEventListener('click', async () => {
-      const eq = document.getElementById('eq');
-      if(!eq) return;
-      if(eq.audioContext) return;
-      const ctx = new (window.AudioContext||window.webkitAudioContext)();
+  <script type="module">
+    import './components/myequalizer.js';
+
+    const eq = document.getElementById('eq');
+    const startBtn = document.getElementById('startBtn');
+
+    startBtn.addEventListener('click', async () => {
+      if (eq.audioContext) return;
+      startBtn.disabled = true;
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      await ctx.resume();
       eq.setAudioContext(ctx);
       const osc = ctx.createOscillator();
       osc.type = 'sine';
       osc.frequency.value = 220;
       osc.start();
       eq.setInput(osc);
-      const out = eq.getOutput();
-      out.connect(ctx.destination);
-    }, { once:true });
-    </script>
+      eq.getOutput().connect(ctx.destination);
+    });
+  </script>
 </body>
 </html>

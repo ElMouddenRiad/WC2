@@ -1,0 +1,200 @@
+@import url('./theme-futuristic.css');
+@import url('./player-shell.css');
+
+/* Page modulaire : racine page + classe shell (même feuille que le shadow du lecteur). */
+.modular-root{
+  display:block;
+  width: 100%;
+  box-sizing: border-box;
+  max-width: 1650px;
+  margin: 0 auto;
+  padding: 10px;
+  font-family: var(--fx-font-ui);
+  color: var(--fx-text);
+  overflow-x: hidden;
+}
+
+.modular-root.modular-fixed{
+  height: 100%;
+  padding: 4px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.modular-root .modular-toggles{
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  align-items: center;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--fx-border);
+  border-radius: var(--fx-radius-sm);
+  background: rgba(0, 0, 0, 0.28);
+}
+.modular-root .modular-toggles label{
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+  color: var(--fx-text-dim);
+  letter-spacing: 0.04em;
+}
+.modular-root .modular-toggles input{ accent-color: var(--fx-cyan); }
+
+.audio-player-shell.modular-fixed .panel{
+  min-height: 100%;
+  display:flex;
+  flex-direction:column;
+  padding: 10px;
+}
+
+.audio-player-shell.modular-fixed .grid{
+  flex: 1 0 auto;
+  gap: 8px;
+  grid-template-rows: minmax(160px, 1fr) minmax(200px, 1.2fr) minmax(140px, auto);
+}
+
+.audio-player-shell.modular-fixed .header{
+  padding: 4px 4px 8px;
+  margin-bottom: 8px;
+}
+
+.audio-player-shell.modular-fixed .card{
+  padding: 8px;
+}
+
+.audio-player-shell.modular-fixed .title{
+  margin-bottom: 6px;
+}
+
+.audio-player-shell.modular-fixed audio{
+  margin-top: 4px;
+}
+
+.audio-player-shell.modular-fixed .time-info{
+  font-size: 10px;
+  margin-top: 2px;
+}
+
+.audio-player-shell.modular-fixed .progress{
+  margin: 3px 0 8px;
+}
+
+.audio-player-shell .dock-slot{
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 60px;
+  border-radius: var(--fx-radius);
+  box-sizing: border-box;
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+.audio-player-shell .dock-slot--empty{
+  border: 2px dashed var(--fx-border);
+  background: rgba(0, 0, 0, 0.18);
+  align-items: center;
+  justify-content: center;
+}
+.audio-player-shell .dock-slot--empty::before{
+  content: 'Glisser un module ici';
+  font-family: var(--fx-font-display);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--fx-text-dim);
+  opacity: 0.4;
+  pointer-events: none;
+  padding: 8px;
+  text-align: center;
+}
+.audio-player-shell .dock-slot:not(.dock-slot--empty)::before{
+  display: none;
+}
+.audio-player-shell .dock-slot.drag-hover{
+  border-color: var(--fx-cyan);
+  background: var(--fx-cyan-dim);
+  box-shadow: var(--fx-glow-cyan);
+}
+.audio-player-shell .dock-slot.drag-hover::before{
+  opacity: 0.95;
+  color: var(--fx-cyan);
+}
+.audio-player-shell .dock-slot .card{
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+/* Pas d’overflow:auto ici : évite des barres toujours visibles (controls / viz).
+   Scroll interne uniquement pour EQ / WAM si la carte est petite (.fx-scrollbar-y). */
+.audio-player-shell .dock-slot .card .card-body{
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.audio-player-shell .dock-slot .card.card-equalizer .card-body,
+.audio-player-shell .dock-slot .card.card-wam .card-body{
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.audio-player-shell .card-playlist .card-body{
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.audio-player-shell .card.card-module-off{
+  opacity: 0.5;
+  filter: grayscale(0.25);
+}
+.audio-player-shell .card.card-module-off .card-slot-active{ display: none !important; }
+.audio-player-shell .card.card-module-off .card-slot-stub{
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 72px;
+  font-size: 11px;
+  color: var(--fx-text-dim);
+  text-align: center;
+  padding: 12px;
+  border: 1px dashed var(--fx-border);
+  border-radius: var(--fx-radius-sm);
+}
+.audio-player-shell .card .card-slot-stub{ display: none; }
+.audio-player-shell .card .card-slot-stub button{
+  font-size: 11px;
+  padding: 6px 12px;
+}
+
+.audio-player-shell my-equalizer,
+.audio-player-shell my-visualizer,
+.audio-player-shell wam-plugin,
+.audio-player-shell my-player-controls{ display: block; }
+
+@media (max-width: 1200px){
+  .audio-player-shell .grid{
+    grid-template-rows: minmax(140px, 1fr) minmax(180px, 1fr) minmax(120px, auto) minmax(140px, auto);
+  }
+}
+
+@media (max-width: 768px){
+  .modular-root{ padding: 10px; }
+  .modular-root.modular-fixed{ padding: 8px; height: 100%; }
+  .audio-player-shell .grid{
+    grid-template-rows: repeat(5, minmax(120px, auto));
+  }
+}
