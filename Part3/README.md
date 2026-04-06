@@ -158,4 +158,22 @@ Les composants sont des modules ES ; conserver la structure `components/`, `css/
 
 ## Documentation complète
 
-- **[SPECIFICATION.md](SPECIFICATION.md)** — tags, attributs, méthodes, événements, graphes, intégration.
+- **[SPECIFICATION.md](SPECIFICATION.md)** — tags, attributs, méthodes, événements, graphes, intégration, [conformité au sujet du cours](SPECIFICATION.md#conformité-au-sujet-du-cours-rappel), décisions de design.
+- **[IA_POSTMORTEM.md](IA_POSTMORTEM.md)** — post-mortem professionnel des outils IA utilisés.
+
+## Sujet du cours — tableau de conformité (rappel)
+
+L’énoncé **Projet Web Components 2025/2026** demande notamment : composants réutilisables par **URI**, documentation type **Detail & Specs**, **faible dépendance**, partage explicite de l’**AudioContext**, playlist / EQ / visualisations / **WAM** optionnel, pages **isolées** + application qui compose les composants, **décisions de design** documentées, **post-mortem IA**.
+
+| Livrable demandé | Où le trouver |
+|------------------|---------------|
+| API détaillée (tag, attributs, méthodes, propriétés, événements) | [SPECIFICATION.md](SPECIFICATION.md) |
+| Communication inter-composants, graphe audio, intégration hôte | [SPECIFICATION.md — Communication](SPECIFICATION.md#communication-inter-composants), [Graphe audio](SPECIFICATION.md#graphe-audio), [Intégration](SPECIFICATION.md#intégration-dans-une-autre-application-audio) |
+| Décisions de design (imbrication, contexte, événements, etc.) | [SPECIFICATION.md — Décisions de design](SPECIFICATION.md#décisions-de-design) |
+| Composants utilisables sans npm, chemins relatifs | Section [Utilisation par URL distante](#utilisation-par-url-distante) ci-dessus |
+| Démos « un composant seul » | Fichiers `isolated-*.html` |
+| Projet complet utilisant les composants | `index.html`, `demo-advanced.html`, `modular-player.html`, etc. |
+| Post-mortem IA | [IA_POSTMORTEM.md](IA_POSTMORTEM.md) |
+| `README.txt` à la racine (modalités) | [README.txt](README.txt) |
+
+**Non inclus (optionnel dans le sujet)** : visualisation **Butterchurn** (mentionnée comme possibilité si le temps le permet) ; le projet couvre spectrum / waveform / VU via `<my-visualizer>` et les contrôles.

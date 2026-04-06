@@ -30,7 +30,8 @@ Chaque composant maison est décrit avec la même structure que l’exemple du c
 8. [Communication inter-composants](#communication-inter-composants)
 9. [Graphe audio](#graphe-audio)
 10. [Intégration dans une autre application audio](#intégration-dans-une-autre-application-audio)
-11. [Décisions de design](#décisions-de-design)
+11. [Conformité au sujet du cours (rappel)](#conformité-au-sujet-du-cours-rappel)
+12. [Décisions de design](#décisions-de-design)
 
 ---
 
@@ -547,6 +548,31 @@ Pour la **démo complète** du lecteur tout-en-un (autre ordre de construction i
 
 ---
 
+## Conformité au sujet du cours (rappel)
+
+Ce bloc résume l’alignement du dépôt avec l’énoncé **Projet Web Components 2025/2026** (lecteur audio, EQ, playlist, visualisations, WAM optionnel, documentation type Detail & Specs, composants réutilisables par URI).
+
+| Exigence du sujet | Réalisation dans ce dépôt |
+|-------------------|---------------------------|
+| Web Components purs (`extends HTMLElement`), Shadow DOM, modules ES | Tous les tags listés dans ce fichier ; pas de framework. |
+| Lecteur + balance + égaliseur + visualiseurs (spectre, forme d’onde, indication de niveau) | Graphe dans `audioplayer.js` ; `<my-visualizer>` (spectrum / waveform) ; VU dans les contrôles. |
+| Playlist (liste, lecture, fin de piste, boucles, aléatoire ; évolutions : suppression, drag) | `<my-playlist>` : détail des événements et méthodes dans la section dédiée. |
+| Effets WAM optionnels | `<wam-plugin>` + exemples (`integration-host-app.html`, `isolated-wam.html`). |
+| Faible dépendance ; partage explicite de l’`AudioContext` ; attributs / API documentés | `setAudioContext`, `setInput`, `setAnalyser`, etc. ; une seule source de vérité pour le contexte côté orchestrateur. |
+| Composants utilisables depuis une page hôte **sans installation npm**, par **URI** de modules | Chemins relatifs `components/*.js` ; hébergement : servir l’arborescence `Part3/` telle quelle (voir README). |
+| Documentation d’API (modèle [Detail & Specs](https://g200kg.github.io/webaudio-controls/docs/detailspecs.html)) | Ce fichier `SPECIFICATION.md` : tag, attributs, méthodes, propriétés, événements par composant. |
+| Décisions de design expliquées | Section [Décisions de design](#décisions-de-design) ci-dessous. |
+| Pages « composant seul » + projet qui les compose | Fichiers `isolated-*.html` + `index.html`, `demo-advanced.html`, `modular-player.html`, etc. |
+| Post-mortem outils IA (fichier séparé, demandé au rendu) | `IA_POSTMORTEM.md` à la racine de `Part3/`. |
+
+**Note (séance / option)** : une visualisation type **Butterchurn** n’est pas intégrée ; le sujet la présente comme option si le temps le permet. Les modes spectrum / waveform du projet couvrent l’exigence principale de visualisation.
+
+**Note (consigne de cours fréquente)** : ne pas utiliser `document.querySelector` **à l’intérieur des composants maison** pour attacher le comportement à la page — utiliser le Shadow DOM, les nœuds créés en JS, ou des méthodes d’injection (`setInput`, …). Les composants du dossier `components/` (hors `libs/`) respectent cette règle. La bibliothèque tierce `webaudiocontrols.js` contient son propre usage du `document` (menu contextuel global) ; elle n’est pas un composant rédigé pour ce TP.
+
+**Note (alternatives du cours)** : le sujet mentionne des enfants légers `<my-player><my-equalizer></…></my-player>` et l’accès au parent. Ici, le **choix documenté** est la **composition dans le Shadow DOM** du lecteur (`<my-audio-player>` instancie les sous-composants dans son template) ; l’API publique des enfants reste la même, et les démos isolées montrent chaque composant sans ce parent.
+
+---
+
 ## Décisions de design
 
 ### 1. Composants imbriqués dans le Shadow DOM du parent
@@ -595,3 +621,23 @@ Pour la **démo complète** du lecteur tout-en-un (autre ordre de construction i
 - Conformité avec l'objectif pédagogique du cours (APIs standards W3C)
 - Zéro dépendance = composants chargeables par simple URI
 - Compréhension directe du cycle de vie des Custom Elements
+
+### 6. Pas de `document.querySelector` dans le code des composants maison
+
+**Choix** : Cibler uniquement l'arbre interne (`this.shadowRoot…`), créer les nœuds avec `document.createElement`, ou recevoir des références via l'API (`setInput(node)`, etc.).
+
+**Pourquoi** :
+- Un composant ne doit pas dépendre de la structure arbitraire de la page hôte (couplage fort, fragile).
+- Alignement avec la consigne de cours rappelée en séance.
+
+**Exception** : `components/libs/webaudiocontrols.js` (librairie externe) utilise le `document` pour des comportements globaux de la lib ; ce n'est pas le code des Custom Elements du projet.
+
+### 7. Composition Shadow du lecteur vs enfants légers dans le light DOM (alternatives du cours)
+
+**Choix** : `<my-audio-player>` inclut les sous-composants dans **son** template (Shadow DOM), pas comme enfants directement placés dans le HTML de la page par l'utilisateur.
+
+**Pourquoi** :
+- Le sujet autorise plusieurs architectures ; celle-ci centralise le graphe Web Audio et évite que chaque enfant doive remonter au parent par `parentNode`.
+- Les mêmes composants (`<my-equalizer>`, …) restent utilisables **seuls** dans `isolated-*.html` avec un hôte script qui joue le rôle d'orchestrateur.
+
+**Alternative non retenue pour le lecteur complet** : imbriquer `<my-equalizer>` comme enfant léger de `<my-audio-player>` et résoudre les références dans `connectedCallback` — possible pour une variante, mais non nécessaire tant que l'API par méthodes et événements est respectée.

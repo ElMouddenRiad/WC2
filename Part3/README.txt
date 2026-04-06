@@ -3,6 +3,8 @@ Projet Web Components 2025/2026 — Lecteur audio (Part3)
 
 Documentation principale (Markdown) : README.md
 API des composants (tags, attributs, methodes, proprietes, evenements) : SPECIFICATION.md
+Conformite sujet + decisions de design : SPECIFICATION.md (sections dediees)
+Post-mortem outils IA (rempli, version professionnelle) : IA_POSTMORTEM.md
 
 webaudio-controls (GUI) :
   Fichier : components/libs/webaudiocontrols.js
