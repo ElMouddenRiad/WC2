@@ -46,7 +46,7 @@ class MyAudioPlayer extends HTMLElement {
           <div id="status" class="status"></div>
         </div>
 
-        <audio id="myplayer" src="${src}" controls preload="metadata"></audio>
+        <audio id="myplayer" src="${src}" preload="metadata"></audio>
         <div class="time-info">
           <span id="curtime">0:00</span> / <span id="duration">0:00</span>
         </div>
